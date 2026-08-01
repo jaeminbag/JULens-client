@@ -340,3 +340,32 @@
     padding: 24px;
   }
 }
+/* 로그인과 회원가입 화면을 전환하는 안내 영역이다. */
+.auth-switch {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin: 0;
+  color: #8e948b;
+  font-size: 14px;
+}
+
+/* 일반 버튼처럼 보이지 않고 라임색 링크처럼 표시한다. */
+.auth-switch-button {
+  padding: 0;
+  color: #c8ff3d;
+  font: inherit;
+  font-weight: 700;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+
+.auth-switch-button:hover:not(:disabled) {
+  text-decoration: underline;
+}
+
+.auth-switch-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}

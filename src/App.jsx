@@ -36,32 +36,63 @@ const posts = [
 function App() {
   const [activeTab, setActiveTab] = useState('latest')
 
-  // 로그인 모달이 열려 있는지를 관리한다.
+  // 로그인·회원가입 모달이 열려 있는지를 관리한다.
   const [isLoginOpen, setIsLoginOpen] = useState(false)
 
-  // 로그인 폼에 입력된 이메일과 비밀번호를 관리한다.
+  // 현재 모달이 로그인 화면인지 회원가입 화면인지 구분한다.
+  const [authMode, setAuthMode] = useState('login')
+
+  // 로그인과 회원가입에서 공통으로 사용하는 입력값이다.
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
 
-  // 로그인 실패 메시지와 요청 진행 상태를 관리한다.
+  // 닉네임은 회원가입 요청에서만 사용한다.
+  const [nickname, setNickname] = useState('')
+
+  // 로그인 실패 메시지와 로그인 요청 진행 상태를 관리한다.
   const [loginError, setLoginError] = useState('')
   const [isLoggingIn, setIsLoggingIn] = useState(false)
+
+  // 회원가입 실패 메시지와 회원가입 요청 진행 상태를 별도로 관리한다.
+  const [signUpError, setSignUpError] = useState('')
+  const [isSigningUp, setIsSigningUp] = useState(false)
 
   const sortedPosts =
     activeTab === 'popular'
       ? [...posts].sort((a, b) => b.likes - a.likes)
       : posts
 
-  // 로그인 버튼을 눌렀을 때 이전 오류를 지우고 모달을 연다.
+    // 현재 인증 화면에 맞는 오류와 요청 상태를 계산한다.
+  // 별도의 state가 아니라 기존 state에서 매 렌더링마다 계산되는 값이다.
+  const isLoginMode = authMode === 'login'
+
+  const authError = isLoginMode ? loginError : signUpError
+
+  const isAuthSubmitting = isLoginMode ? isLoggingIn : isSigningUp    
+ 
+  // 헤더의 Log in 버튼을 누르면 항상 로그인 화면으로 모달을 연다.
   const openLoginModal = () => {
+    setAuthMode('login')
     setLoginError('')
+    setSignUpError('')
     setIsLoginOpen(true)
   }
 
-  // 로그인 모달을 닫고 기존 오류 메시지를 지운다.
+  // 모달을 닫을 때 입력값과 오류를 모두 초기화한다.
   const closeLoginModal = () => {
     setIsLoginOpen(false)
+    setEmail('')
+    setPassword('')
+    setNickname('')
     setLoginError('')
+    setSignUpError('')
+  }
+
+  // 로그인과 회원가입 화면을 전환하고 이전 오류를 지운다.
+  const changeAuthMode = (nextMode) => {
+    setAuthMode(nextMode)
+    setLoginError('')
+    setSignUpError('')
   }
 
   // 로그인 폼을 제출하면 백엔드 로그인 API를 호출한다.
@@ -125,7 +156,62 @@ function App() {
       setIsLoggingIn(false)
     }
   }
+    // 회원가입 폼을 제출하면 백엔드 회원가입 API를 호출한다.
+  const handleSignUp = async (event) => {
+    // form 제출로 페이지가 새로고침되는 것을 막는다.
+    event.preventDefault()
 
+    setSignUpError('')
+    setIsSigningUp(true)
+
+    try {
+      const response = await fetch('http://localhost:8080/auth/signup', {
+        method: 'POST',
+        headers: {
+          // 요청 본문이 JSON 형식임을 백엔드에 알려준다.
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email,
+          password,
+          nickname,
+        }),
+      })
+
+      // ApiResponse<SignUpResponse>를 자바스크립트 객체로 변환한다.
+      const result = await response.json()
+
+      // HTTP 오류와 JULens 공통 응답의 실패 여부를 함께 검사한다.
+      if (!response.ok || !result.success) {
+        throw new Error(result.message || '회원가입에 실패했습니다.')
+      }
+
+      // 회원가입 응답에는 JWT가 없으므로 로그인 화면으로만 전환한다.
+      // 이메일은 그대로 두고 비밀번호와 닉네임만 초기화한다.
+      setAuthMode('login')
+      setPassword('')
+      setNickname('')
+      setSignUpError('')
+
+      alert('회원가입이 완료되었습니다. 방금 만든 계정으로 로그인해주세요.')
+    } catch (error) {
+      // fetch 요청 자체가 실패한 경우에는 서버 연결 문제로 안내한다.
+      if (error instanceof TypeError) {
+        setSignUpError(
+          '서버에 연결할 수 없습니다. 백엔드 서버가 실행 중인지 확인해주세요.',
+        )
+      } else {
+        setSignUpError(
+          error instanceof Error
+            ? error.message
+            : '회원가입 중 알 수 없는 오류가 발생했습니다.',
+        )
+      }
+    } finally {
+      // 회원가입 성공·실패와 관계없이 요청 진행 상태를 끝낸다.
+      setIsSigningUp(false)
+    }
+  }
   return (
     <main className="app">
       <header className="header">
@@ -162,75 +248,127 @@ function App() {
             }
           }}
         >
-          <section
-            className="login-modal"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="login-title"
-          >
-            <div className="login-modal-header">
-              <div>
-                <p className="login-modal-label">WELCOME BACK</p>
-                <h2 id="login-title">Log in</h2>
+                      <section
+              className="login-modal"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="auth-title"
+            >
+              <div className="login-modal-header">
+                <div>
+                  <p className="login-modal-label">
+                    {isLoginMode ? 'WELCOME BACK' : 'JOIN JULENS'}
+                  </p>
+                  <h2 id="auth-title">
+                    {isLoginMode ? 'Log in' : 'Sign up'}
+                  </h2>
+                </div>
+
+                <button
+                  className="login-close-button"
+                  type="button"
+                  aria-label="인증 창 닫기"
+                  onClick={closeLoginModal}
+                >
+                  ×
+                </button>
               </div>
 
-              <button
-                className="login-close-button"
-                type="button"
-                aria-label="로그인 창 닫기"
-                onClick={closeLoginModal}
+              {/* 현재 화면에 따라 로그인 또는 회원가입 함수를 실행한다. */}
+              <form
+                className="login-form"
+                onSubmit={isLoginMode ? handleLogin : handleSignUp}
               >
-                ×
-              </button>
-            </div>
+                {/* 닉네임 입력창은 회원가입 화면에서만 표시한다. */}
+                {!isLoginMode && (
+                  <label className="login-field" htmlFor="signup-nickname">
+                    <span>Nickname</span>
+                    <input
+                      id="signup-nickname"
+                      type="text"
+                      value={nickname}
+                      minLength={2}
+                      maxLength={20}
+                      autoComplete="nickname"
+                      placeholder="2~20자의 닉네임을 입력해주세요"
+                      onChange={(event) => setNickname(event.target.value)}
+                      required
+                    />
+                  </label>
+                )}
 
-            {/* 제출 버튼 클릭과 Enter 입력 모두 handleLogin으로 처리된다. */}
-            <form className="login-form" onSubmit={handleLogin}>
-              <label className="login-field" htmlFor="login-email">
-                <span>Email</span>
-                <input
-                  id="login-email"
-                  type="email"
-                  value={email}
-                  maxLength={30}
-                  autoComplete="email"
-                  placeholder="이메일을 입력해주세요"
-                  onChange={(event) => setEmail(event.target.value)}
-                  required
-                />
-              </label>
+                <label className="login-field" htmlFor="auth-email">
+                  <span>Email</span>
+                  <input
+                    id="auth-email"
+                    type="email"
+                    value={email}
+                    maxLength={30}
+                    autoComplete="email"
+                    placeholder="이메일을 입력해주세요"
+                    onChange={(event) => setEmail(event.target.value)}
+                    required
+                  />
+                </label>
 
-              <label className="login-field" htmlFor="login-password">
-                <span>Password</span>
-                <input
-                  id="login-password"
-                  type="password"
-                  value={password}
-                  minLength={10}
-                  maxLength={20}
-                  autoComplete="current-password"
-                  placeholder="비밀번호를 입력해주세요"
-                  onChange={(event) => setPassword(event.target.value)}
-                  required
-                />
-              </label>
+                <label className="login-field" htmlFor="auth-password">
+                  <span>Password</span>
+                  <input
+                    id="auth-password"
+                    type="password"
+                    value={password}
+                    minLength={10}
+                    maxLength={20}
+                    autoComplete={
+                      isLoginMode ? 'current-password' : 'new-password'
+                    }
+                    placeholder="10~20자의 비밀번호를 입력해주세요"
+                    onChange={(event) => setPassword(event.target.value)}
+                    required
+                  />
+                </label>
 
-              {/* 로그인 실패 시에만 백엔드 오류 메시지를 출력한다. */}
-              {loginError && (
-                <p className="login-error" role="alert">
-                  {loginError}
+                {/* 현재 화면에 해당하는 오류만 표시한다. */}
+                {authError && (
+                  <p className="login-error" role="alert">
+                    {authError}
+                  </p>
+                )}
+
+                <button
+                  className="login-submit-button"
+                  type="submit"
+                  disabled={isAuthSubmitting}
+                >
+                  {isLoginMode
+                    ? isLoggingIn
+                      ? 'Logging in...'
+                      : 'Log in'
+                    : isSigningUp
+                      ? 'Signing up...'
+                      : 'Sign up'}
+                </button>
+
+                <p className="auth-switch">
+                  <span>
+                    {isLoginMode
+                      ? '아직 계정이 없나요?'
+                      : '이미 계정이 있나요?'}
+                  </span>
+
+                  <button
+                    className="auth-switch-button"
+                    type="button"
+                    disabled={isAuthSubmitting}
+                    onClick={() =>
+                      changeAuthMode(isLoginMode ? 'signup' : 'login')
+                    }
+                  >
+                    {isLoginMode ? 'Sign up' : 'Log in'}
+                  </button>
                 </p>
-              )}
-
-              <button
-                className="login-submit-button"
-                type="submit"
-                disabled={isLoggingIn}
-              >
-                {isLoggingIn ? 'Logging in...' : 'Log in'}
-              </button>
-            </form>
-          </section>
+              </form>
+            </section>
         </div>
       )}
 
