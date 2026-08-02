@@ -33,6 +33,35 @@ const posts = [
     comments: 3,
   },
 ]
+
+// JWT에 저장된 exp를 확인하여 현재 사용할 수 있는 토큰인지 검사한다.
+const isAccessTokenValid = (token) => {
+  if (!token) {
+    return false
+  }
+
+  try {
+    // JWT는 header.payload.signature 구조이므로 가운데 payload를 꺼낸다.
+    const payloadPart = token.split('.')[1]
+
+    // Base64 URL 형식을 브라우저의 atob()가 읽을 수 있도록 변환한다.
+    const base64 = payloadPart
+        .replace(/-/g, '+')
+        .replace(/_/g, '/')
+
+    // JWT payload를 객체로 변환한다.
+    const payload = JSON.parse(atob(base64))
+
+    // JWT의 exp는 초 단위이고 Date.now()는 밀리초 단위이므로 환산한다.
+    const expirationTime = payload.exp * 1000
+
+    // 현재 시각이 만료 시각 전이면 유효한 토큰이다.
+    return Date.now() < expirationTime
+  } catch (error) {
+    // JWT 형식이 잘못된 경우도 비로그인 상태로 처리한다.
+    return false
+  }
+}
 function App() {
   const [activeTab, setActiveTab] = useState('latest')
 
@@ -56,6 +85,20 @@ function App() {
   // 회원가입 실패 메시지와 회원가입 요청 진행 상태를 별도로 관리한다.
   const [signUpError, setSignUpError] = useState('')
   const [isSigningUp, setIsSigningUp] = useState(false)
+
+  const [isLoggedIn, setIsLoggedIn] = useState(() => {
+    // 브라우저에 저장된 JWT를 가져온다.
+    const accessToken = localStorage.getItem('accessToken')
+
+    // JWT가 없거나 이미 만료됐다면 저장소에서도 삭제한다.
+    if (!isAccessTokenValid(accessToken)) {
+      localStorage.removeItem('accessToken')
+      return false
+    }
+
+    // 유효한 JWT가 있을 때만 로그인 상태로 시작한다.
+    return true
+  })
 
   const sortedPosts =
     activeTab === 'popular'
@@ -133,6 +176,7 @@ function App() {
 
       // 이후 GET /posts 같은 인증 API 요청에서 사용할 JWT를 저장한다.
       localStorage.setItem('accessToken', accessToken)
+      setIsLoggedIn(true)
 
       setIsLoginOpen(false)
       setPassword('')
@@ -156,6 +200,25 @@ function App() {
       setIsLoggingIn(false)
     }
   }
+
+  // 저장된 JWT를 삭제하고 비로그인 상태로 변경한다.
+  const handleLogout = () => {
+    // 브라우저에 저장된 JWT를 삭제한다.
+    localStorage.removeItem('accessToken')
+
+    // React 화면을 비로그인 상태로 변경한다.
+    setIsLoggedIn(false)
+
+    // 로그인·회원가입 입력값과 오류 메시지를 초기화한다.
+    setEmail('')
+    setPassword('')
+    setNickname('')
+    setLoginError('')
+    setSignUpError('')
+
+    alert('로그아웃되었습니다.')
+  }
+
     // 회원가입 폼을 제출하면 백엔드 회원가입 API를 호출한다.
   const handleSignUp = async (event) => {
     // form 제출로 페이지가 새로고침되는 것을 막는다.
@@ -228,13 +291,24 @@ function App() {
           </button>
         </nav>
 
-        <button
-          className="login-button"
-          type="button"
-          onClick={openLoginModal}
-        >
-          Log in
-        </button>
+        {/* 로그인 상태에 따라 Log out 또는 Log in 버튼을 표시한다. */}
+        {isLoggedIn ? (
+            <button
+                className="login-button"
+                type="button"
+                onClick={handleLogout}
+            >
+              Log out
+            </button>
+        ) : (
+            <button
+                className="login-button"
+                type="button"
+                onClick={openLoginModal}
+            >
+              Log in
+            </button>
+        )}
       </header>
 
       {/* isLoginOpen이 true일 때만 로그인 모달을 화면에 표시한다. */}
