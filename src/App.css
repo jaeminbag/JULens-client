@@ -345,3 +345,113 @@
     padding: 24px;
   }
 }
+
+/* 게시글이 없을 때 단순 문구 대신 피드의 빈 상태를 시각적으로 보여준다. */
+.feed-empty-state {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 25px;
+  min-height: 150px;
+  padding: 30px 34px;
+  overflow: hidden;
+  background:
+          linear-gradient(
+                  110deg,
+                  rgb(200 255 61 / 4%),
+                  transparent 42%
+          ),
+          #151815;
+  border: 1px solid #30362f;
+  border-radius: 3px 16px 16px 16px;
+}
+
+/* 왼쪽 상단의 강조선으로 기존 JULens 디자인과 연결한다. */
+.feed-empty-state::before {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 86px;
+  height: 3px;
+  background: #c8ff3d;
+  box-shadow: 0 0 18px rgb(200 255 61 / 35%);
+  content: '';
+}
+
+/* 배경에 은은한 장식 원을 표시한다. */
+.feed-empty-state::after {
+  position: absolute;
+  right: -48px;
+  bottom: -74px;
+  width: 150px;
+  height: 150px;
+  border: 1px solid rgb(200 255 61 / 7%);
+  border-radius: 50%;
+  content: '';
+}
+
+
+.feed-empty-copy {
+  position: relative;
+  z-index: 1;
+}
+
+.feed-empty-label {
+  display: block;
+  margin-bottom: 9px;
+  color: #7d8579;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.16em;
+}
+
+.feed-empty-copy h3 {
+  margin: 0;
+  color: #eef1eb;
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1.35;
+  letter-spacing: -0.7px;
+}
+
+.feed-empty-copy p {
+  margin: 8px 0 0;
+  color: #747b72;
+  font-size: 12px;
+  line-height: 1.65;
+}
+
+.feed-empty-status {
+  position: relative;
+  z-index: 1;
+  align-self: flex-start;
+  padding: 7px 9px;
+  color: #626960;
+  background: #111411;
+  border: 1px solid #292f28;
+  border-radius: 999px;
+  font-size: 8px;
+  font-weight: 850;
+  letter-spacing: 0.12em;
+}
+
+@media (max-width: 680px) {
+  .feed-empty-state {
+    grid-template-columns: 1fr;
+    gap: 18px;
+    min-height: 135px;
+    padding: 25px 21px;
+  }
+
+  .feed-empty-copy h3 {
+    font-size: 17px;
+  }
+
+  .feed-empty-status {
+    display: none;
+  }
+}
+
+
+

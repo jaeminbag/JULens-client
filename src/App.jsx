@@ -1,39 +1,44 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import './App.css'
 
-const posts = [
-  {
-    id: 1,
-    tag: 'MARKET',
-    title: '실적 발표 이후 거래량이 급증한 종목, 지금 들어가도 될까?',
-    content: '장 초반부터 평소보다 큰 거래량이 붙었는데 윗꼬리가 조금 신경 쓰입니다.',
-    author: 'JULens',
-    time: '12분 전',
-    likes: 24,
-    comments: 8,
-  },
-  {
-    id: 2,
-    tag: 'TECH',
-    title: 'AI 서버 수요가 이어질 때 다음으로 볼 섹터',
-    content: '반도체만 보지 말고 전력 인프라와 냉각 쪽도 같이 봐야 할 것 같아요.',
-    author: 'minseo',
-    time: '38분 전',
-    likes: 16,
-    comments: 5,
-  },
-  {
-    id: 3,
-    tag: 'WATCH',
-    title: '오늘 급등주는 재료보다 거래량을 먼저 봐야 하는 이유',
-    content: '뉴스가 좋아도 거래대금이 받쳐주지 않으면 진입 타이밍이 애매합니다.',
-    author: 'stocklog',
-    time: '1시간 전',
-    likes: 11,
-    comments: 3,
-  },
-]
+// 게시글 작성 시각을 '12분 전', '3시간 전' 형태로 변환한다.
+const formatCreatedAt = (createdAt) => {
+  const createdTime = new Date(createdAt).getTime()
+
+  // 서버 날짜값을 변환할 수 없는 경우 빈 문자열을 표시한다.
+  if (Number.isNaN(createdTime)) {
+    return ''
+  }
+
+  const differenceInSeconds = Math.max(
+      0,
+      Math.floor((Date.now() - createdTime) / 1000),
+  )
+
+  if (differenceInSeconds < 60) {
+    return '방금 전'
+  }
+
+  if (differenceInSeconds < 3600) {
+    return `${Math.floor(differenceInSeconds / 60)}분 전`
+  }
+
+  if (differenceInSeconds < 86400) {
+    return `${Math.floor(differenceInSeconds / 3600)}시간 전`
+  }
+
+  if (differenceInSeconds < 604800) {
+    return `${Math.floor(differenceInSeconds / 86400)}일 전`
+  }
+
+  // 일주일보다 오래된 게시글은 실제 작성 날짜를 표시한다.
+  return new Intl.DateTimeFormat('ko-KR', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  }).format(new Date(createdAt))
+}
 
 // JWT에 저장된 exp를 확인하여 현재 사용할 수 있는 토큰인지 검사한다.
 const isAccessTokenValid = (token) => {
@@ -68,6 +73,13 @@ function App() {
   const navigate = useNavigate()
 
   const [activeTab, setActiveTab] = useState('latest')
+
+// 서버에서 받은 실제 게시글 목록을 관리한다.
+  const [posts, setPosts] = useState([])
+
+// 게시글 조회 중 상태와 실패 메시지를 관리한다.
+  const [isPostsLoading, setIsPostsLoading] = useState(false)
+  const [postsError, setPostsError] = useState('')
 
   // 로그인·회원가입 모달이 열려 있는지를 관리한다.
   const [isLoginOpen, setIsLoginOpen] = useState(false)
@@ -104,10 +116,69 @@ function App() {
     return true
   })
 
-  const sortedPosts =
-    activeTab === 'popular'
-      ? [...posts].sort((a, b) => b.likes - a.likes)
-      : posts
+  // 선택한 탭이 바뀌거나 로그인이 완료되면 게시글 목록을 다시 조회한다.
+  useEffect(() => {
+    const fetchPosts = async () => {
+      const accessToken = localStorage.getItem('accessToken')
+
+      // JULens 게시글 API는 로그인한 사용자만 이용할 수 있다.
+      if (!isLoggedIn || !isAccessTokenValid(accessToken)) {
+        setPosts([])
+        setPostsError('로그인하면 게시글을 확인할 수 있습니다.')
+        setIsPostsLoading(false)
+        return
+      }
+
+      // 인기글 탭은 인기글 전용 API를, 최신글 탭은 일반 목록 API를 사용한다.
+      const requestUrl =
+          activeTab === 'popular'
+              ? 'http://localhost:8080/posts/popular'
+              : 'http://localhost:8080/posts'
+
+      try {
+        setIsPostsLoading(true)
+        setPostsError('')
+
+        const response = await fetch(requestUrl, {
+          method: 'GET',
+          headers: {
+            // 서버가 JWT에서 로그인 사용자를 확인할 수 있도록 전달한다.
+            Authorization: `Bearer ${accessToken}`,
+          },
+        })
+
+        // 서버의 ApiResponse<Page<PostListResponse>>를 객체로 변환한다.
+        const result = await response.json()
+
+        if (!response.ok || !result.success) {
+          throw new Error(
+              result.message || '게시글 목록을 불러오지 못했습니다.',
+          )
+        }
+
+        // Page 객체의 content 배열에 실제 게시글 목록이 들어 있다.
+        setPosts(result.data?.content ?? [])
+      } catch (error) {
+        setPosts([])
+
+        if (error instanceof TypeError) {
+          setPostsError(
+              '서버에 연결할 수 없습니다. 백엔드 서버를 확인해주세요.',
+          )
+        } else {
+          setPostsError(
+              error instanceof Error
+                  ? error.message
+                  : '게시글을 불러오는 중 오류가 발생했습니다.',
+          )
+        }
+      } finally {
+        setIsPostsLoading(false)
+      }
+    }
+
+    fetchPosts()
+  }, [activeTab, isLoggedIn])
 
     // 현재 인증 화면에 맞는 오류와 요청 상태를 계산한다.
   // 별도의 state가 아니라 기존 state에서 매 렌더링마다 계산되는 값이다.
@@ -518,25 +589,57 @@ function App() {
         </div>
 
         <div className="post-list">
-          {sortedPosts.map((post) => (
-            <article className="post-card" key={post.id}>
-              <div className="post-top">
-                <span className="tag">{post.tag}</span>
-                <span className="time">{post.time}</span>
-              </div>
+          {isPostsLoading ? (
+              // 서버 응답을 기다리는 동안 로딩 문구를 표시한다.
+              <p className="feed-status">게시글을 불러오는 중입니다...</p>
+          ) : postsError ? (
+              // 서버 연결이나 인증에 실패한 경우 오류 메시지를 표시한다.
+              <p className="feed-status feed-error">{postsError}</p>
+          ) : posts.length === 0 ? (
+              // 요청에는 성공했지만 등록된 게시글이 없는 경우다.
+              <div className="feed-empty-state">
+                <div className="feed-empty-copy">
+      <span className="feed-empty-label">
+        COMMUNITY FEED · NO SIGNAL
+      </span>
 
-              <h3>{post.title}</h3>
-              <p>{post.content}</p>
+                  <h3>아직 등록된 게시글이 없습니다.</h3>
 
-              <div className="post-bottom">
-                <span>@{post.author}</span>
-                <div className="post-stats">
-                  <span>♡ {post.likes}</span>
-                  <span>◌ {post.comments}</span>
+                  <p>
+                    새로운 관점과 시장에 대한 생각을
+                    가장 먼저 공유해보세요.
+                  </p>
                 </div>
+
+                <span className="feed-empty-status">
+      WAITING FOR FIRST POST
+    </span>
               </div>
-            </article>
-          ))}
+          ) : (
+              posts.map((post) => (
+                  <article className="post-card" key={post.postId}>
+                    <div className="post-top">
+                      {/* 현재 DTO에는 게시글 분류가 없으므로 공통 태그를 표시한다. */}
+                      <span className="tag">COMMUNITY</span>
+
+                      <span className="time">
+            {formatCreatedAt(post.createdAt)}
+          </span>
+                    </div>
+
+                    <h3>{post.title}</h3>
+                    <p>{post.contentPreview}</p>
+
+                    <div className="post-bottom">
+                      <span>@{post.authorNickname}</span>
+
+                      <div className="post-stats">
+                        <span>♡ {post.likeCount ?? 0}</span>
+                      </div>
+                    </div>
+                  </article>
+              ))
+          )}
         </div>
       </section>
     </main>
