@@ -58,7 +58,7 @@ const isAccessTokenValid = (token) => {
 
     // 현재 시각이 만료 시각 전이면 유효한 토큰이다.
     return Date.now() < expirationTime
-  } catch (error) {
+  } catch {
     // JWT 형식이 잘못된 경우도 비로그인 상태로 처리한다.
     return false
   }
