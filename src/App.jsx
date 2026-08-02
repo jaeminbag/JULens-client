@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import './App.css'
 
 const posts = [
@@ -63,6 +64,9 @@ const isAccessTokenValid = (token) => {
   }
 }
 function App() {
+  // React Router를 이용해 다른 주소로 이동한다.
+  const navigate = useNavigate()
+
   const [activeTab, setActiveTab] = useState('latest')
 
   // 로그인·회원가입 모달이 열려 있는지를 관리한다.
@@ -120,6 +124,25 @@ function App() {
     setSignUpError('')
     setIsLoginOpen(true)
   }
+
+  // 글쓰기 버튼을 눌렀을 때 로그인 여부와 JWT 유효성을 확인한다.
+  const handleWriteClick = () => {
+    const accessToken = localStorage.getItem('accessToken')
+
+    // 토큰이 없거나 만료됐다면 로그인 모달을 연다.
+    if (!isAccessTokenValid(accessToken)) {
+      localStorage.removeItem('accessToken')
+      setIsLoggedIn(false)
+
+      alert('글을 작성하려면 로그인이 필요합니다.')
+      openLoginModal()
+      return
+    }
+
+    // 로그인된 사용자를 게시글 작성 페이지로 이동시킨다.
+    navigate('/posts/new')
+  }
+
 
   // 모달을 닫을 때 입력값과 오류를 모두 초기화한다.
   const closeLoginModal = () => {
@@ -467,7 +490,12 @@ function App() {
             <h2>게시글</h2>
           </div>
 
-          <button className="write-button" type="button">
+          {/* 클릭하면 로그인 여부를 검사한 뒤 글쓰기를 진행한다. */}
+          <button
+              className="write-button"
+              type="button"
+              onClick={handleWriteClick}
+          >
             + 글쓰기
           </button>
         </div>

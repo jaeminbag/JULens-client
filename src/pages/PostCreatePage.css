@@ -1,0 +1,848 @@
+/* 글쓰기 페이지의 공통 색상과 전체 레이아웃 기준을 정의한다. */
+.post-create-page {
+    --post-bg: #0d0f0d;
+    --post-panel: #151815;
+    --post-panel-light: #1a1e1a;
+    --post-line: #30362f;
+    --post-line-soft: #242924;
+    --post-text: #f3f5ee;
+    --post-muted: #858b82;
+    --post-dim: #555b54;
+    --post-accent: #c8ff3d;
+
+    position: relative;
+    width: 100%;
+    min-height: 100vh;
+    overflow: hidden;
+    color: var(--post-text);
+    background:
+            linear-gradient(rgb(255 255 255 / 2%) 1px, transparent 1px),
+            linear-gradient(90deg, rgb(255 255 255 / 2%) 1px, transparent 1px),
+            radial-gradient(
+                    circle at 78% 28%,
+                    rgb(200 255 61 / 9%),
+                    transparent 28%
+            ),
+            var(--post-bg);
+    background-size: 58px 58px, 58px 58px, auto, auto;
+}
+
+/* 배경의 거대한 J 문자는 콘텐츠를 방해하지 않는 브랜드 워터마크다. */
+.post-create-background-mark {
+    position: absolute;
+    right: -4vw;
+    bottom: -17vw;
+    color: transparent;
+    font-size: clamp(420px, 47vw, 760px);
+    font-weight: 950;
+    line-height: 0.75;
+    -webkit-text-stroke: 1px rgb(200 255 61 / 6%);
+    pointer-events: none;
+    user-select: none;
+}
+
+.post-create-logo,
+.post-create-back-button,
+.post-create-prompt-row button,
+.post-create-cancel-button,
+.post-create-submit-button {
+    font: inherit;
+    cursor: pointer;
+}
+
+/* 상단 헤더는 메인 화면의 로고를 유지하면서 작성 화면의 위치를 알려준다. */
+.post-create-global-header {
+    position: relative;
+    z-index: 2;
+    box-sizing: border-box;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    width: min(100%, 1240px);
+    margin: 0 auto;
+    padding: 25px 28px;
+    border-bottom: 1px solid var(--post-line-soft);
+}
+
+.post-create-logo {
+    justify-self: start;
+    padding: 0;
+    color: var(--post-text);
+    background: transparent;
+    border: 0;
+    font-size: 22px;
+    font-weight: 900;
+    letter-spacing: -1px;
+}
+
+.post-create-logo span,
+.post-create-intro h1 em,
+.post-create-field-number {
+    color: var(--post-accent);
+}
+
+.post-create-header-center {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #656b63;
+    font-size: 10px;
+    font-weight: 850;
+    letter-spacing: 0.14em;
+}
+
+.post-create-header-center i {
+    width: 22px;
+    height: 1px;
+    background: #414740;
+}
+
+.post-create-header-center strong {
+    color: #b6bbb3;
+}
+
+.post-create-back-button {
+    justify-self: end;
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 0 0 14px;
+    color: #aeb3ab;
+    background: transparent;
+    border: 0;
+    font-size: 12px;
+    font-weight: 750;
+}
+
+.post-create-back-button i {
+    display: grid;
+    width: 32px;
+    height: 32px;
+    place-items: center;
+    color: var(--post-text);
+    font-size: 18px;
+    font-style: normal;
+    background: #181b18;
+    border: 1px solid #353a34;
+    border-radius: 50%;
+    transition:
+            color 0.18s,
+            background 0.18s,
+            border-color 0.18s,
+            transform 0.18s;
+}
+
+.post-create-back-button:hover i {
+    color: var(--post-bg);
+    background: var(--post-accent);
+    border-color: var(--post-accent);
+    transform: rotate(90deg);
+}
+
+/* 왼쪽 미리보기와 오른쪽 에디터를 하나의 작업 공간처럼 배치한다. */
+.post-create-workspace {
+    position: relative;
+    z-index: 1;
+    box-sizing: border-box;
+    display: grid;
+    grid-template-columns:
+    minmax(300px, 0.78fr)
+    minmax(570px, 1.42fr);
+    align-items: start;
+    gap: clamp(48px, 6vw, 86px);
+    width: min(100%, 1240px);
+    margin: 0 auto;
+    padding: clamp(54px, 7vw, 92px) 28px 96px;
+}
+
+.post-create-side-panel {
+    position: sticky;
+    top: 34px;
+}
+
+.post-create-eyebrow {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0 0 18px;
+    color: #969c93;
+    font-size: 10px;
+    font-weight: 850;
+    letter-spacing: 0.15em;
+}
+
+.post-create-eyebrow > span {
+    width: 7px;
+    height: 7px;
+    background: var(--post-accent);
+    box-shadow: 0 0 18px rgb(200 255 61 / 70%);
+}
+
+.post-create-intro h1 {
+    margin: 0;
+    font-size: clamp(58px, 6.2vw, 88px);
+    line-height: 0.88;
+    letter-spacing: -5.5px;
+}
+
+.post-create-intro h1 em {
+    font-style: normal;
+}
+
+.post-create-description {
+    margin: 29px 0 0;
+    color: #969c93;
+    font-size: 14px;
+    line-height: 1.8;
+}
+
+/* 입력 결과가 실제 피드에서 어떻게 보일지 실시간으로 보여주는 카드다. */
+.post-create-preview {
+    position: relative;
+    overflow: hidden;
+    margin-top: 54px;
+    background: rgb(21 24 21 / 82%);
+    border: 1px solid var(--post-line);
+    border-radius: 14px;
+    box-shadow: 0 22px 70px rgb(0 0 0 / 25%);
+    backdrop-filter: blur(12px);
+}
+
+.post-create-preview::before {
+    position: absolute;
+    top: -52px;
+    right: -52px;
+    width: 110px;
+    height: 110px;
+    background: rgb(200 255 61 / 6%);
+    border: 1px solid rgb(200 255 61 / 10%);
+    border-radius: 50%;
+    content: '';
+}
+
+.post-create-preview-header,
+.post-create-preview-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 13px 16px;
+    color: #6f756d;
+    font-size: 9px;
+    font-weight: 850;
+    letter-spacing: 0.14em;
+}
+
+.post-create-preview-header {
+    border-bottom: 1px solid var(--post-line-soft);
+}
+
+.post-create-live-state {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #aab0a6;
+}
+
+.post-create-live-state i {
+    width: 5px;
+    height: 5px;
+    background: var(--post-accent);
+    border-radius: 50%;
+    box-shadow: 0 0 9px var(--post-accent);
+}
+
+.post-create-preview-body {
+    min-height: 148px;
+    padding: 22px 20px 24px;
+}
+
+.post-create-preview-tag {
+    color: var(--post-accent);
+    font-size: 9px;
+    font-weight: 900;
+    letter-spacing: 0.13em;
+}
+
+.post-create-preview-body h2 {
+    display: -webkit-box;
+    overflow: hidden;
+    margin: 13px 0 9px;
+    font-size: 17px;
+    line-height: 1.35;
+    letter-spacing: -0.4px;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+}
+
+.post-create-preview-body p {
+    display: -webkit-box;
+    overflow: hidden;
+    margin: 0;
+    color: #8d938a;
+    font-size: 12px;
+    line-height: 1.6;
+    white-space: pre-line;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+}
+
+.post-create-preview-body .is-placeholder {
+    color: #555b54;
+}
+
+.post-create-preview-footer {
+    border-top: 1px solid var(--post-line-soft);
+}
+
+.post-create-preview-footer span:first-child {
+    color: #b9beb5;
+}
+
+/* 에디터를 별도의 전문 작성 도구처럼 보이도록 구성한다. */
+.post-create-editor {
+    position: relative;
+    box-sizing: border-box;
+    padding: 34px 38px 36px;
+    background:
+            linear-gradient(
+                    140deg,
+                    rgb(255 255 255 / 2%),
+                    transparent 36%
+            ),
+            var(--post-panel);
+    border: 1px solid #363c35;
+    border-radius: 4px 22px 22px 22px;
+    box-shadow:
+            0 42px 100px rgb(0 0 0 / 36%),
+            12px 12px 0 rgb(200 255 61 / 3%);
+}
+
+.post-create-editor::before {
+    position: absolute;
+    top: -1px;
+    left: -1px;
+    width: 96px;
+    height: 4px;
+    background: var(--post-accent);
+    box-shadow: 0 0 22px rgb(200 255 61 / 28%);
+    content: '';
+}
+
+.post-create-editor::after {
+    position: absolute;
+    top: 17px;
+    right: 17px;
+    width: 7px;
+    height: 7px;
+    border-top: 1px solid #4b5149;
+    border-right: 1px solid #4b5149;
+    content: '';
+}
+
+.post-create-editor-header,
+.post-create-field-heading,
+.post-create-editor-footer,
+.post-create-visibility,
+.post-create-actions,
+.post-create-ready-state,
+.post-create-submit-button,
+.post-create-submit-button > span {
+    display: flex;
+    align-items: center;
+}
+
+.post-create-editor-header {
+    justify-content: space-between;
+    gap: 22px;
+}
+
+.post-create-editor-header p {
+    margin: 0 0 7px;
+    color: var(--post-accent);
+    font-size: 9px;
+    font-weight: 900;
+    letter-spacing: 0.16em;
+}
+
+.post-create-editor-header h2 {
+    margin: 0;
+    font-size: 25px;
+    letter-spacing: -0.8px;
+}
+
+.post-create-ready-state {
+    gap: 8px;
+    padding: 8px 11px;
+    color: #7a8178;
+    background: #111411;
+    border: 1px solid #2e342d;
+    border-radius: 999px;
+    font-size: 9px;
+    font-weight: 850;
+    letter-spacing: 0.1em;
+}
+
+.post-create-ready-state i {
+    width: 6px;
+    height: 6px;
+    background: #5c625b;
+    border-radius: 50%;
+}
+
+.post-create-ready-state.is-ready {
+    color: #d3d8ce;
+    border-color: rgb(200 255 61 / 28%);
+}
+
+.post-create-ready-state.is-ready i {
+    background: var(--post-accent);
+    box-shadow: 0 0 10px rgb(200 255 61 / 65%);
+}
+
+/* 제목과 내용의 입력 여부를 0%, 50%, 100%로 표시한다. */
+.post-create-progress {
+    height: 2px;
+    margin: 27px 0 42px;
+    overflow: hidden;
+    background: #292e28;
+}
+
+.post-create-progress span {
+    display: block;
+    height: 100%;
+    background: var(--post-accent);
+    box-shadow: 0 0 14px rgb(200 255 61 / 55%);
+    transition: width 0.25s ease;
+}
+
+.post-create-field-block {
+    position: relative;
+}
+
+.post-create-field-heading {
+    gap: 13px;
+    cursor: text;
+}
+
+.post-create-field-number {
+    align-self: flex-start;
+    padding-top: 3px;
+    font-size: 10px;
+    font-weight: 900;
+}
+
+.post-create-field-heading > span:nth-child(2) {
+    display: grid;
+    gap: 4px;
+}
+
+.post-create-field-heading strong {
+    color: #d7dbd4;
+    font-size: 12px;
+    letter-spacing: 0.04em;
+}
+
+.post-create-field-heading small {
+    color: #626860;
+    font-size: 10px;
+    font-weight: 500;
+}
+
+.post-create-field-heading em {
+    margin-left: auto;
+    color: #5f655d;
+    font-size: 9px;
+    font-style: normal;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+}
+
+.post-create-title-block input,
+.post-create-content-block textarea {
+    box-sizing: border-box;
+    width: 100%;
+    color: var(--post-text);
+    font: inherit;
+    background: transparent;
+    border: 0;
+    outline: 0;
+}
+
+.post-create-title-block input {
+    margin-top: 25px;
+    padding: 0 0 12px;
+    font-size: clamp(26px, 3.1vw, 38px);
+    font-weight: 760;
+    line-height: 1.25;
+    letter-spacing: -1.7px;
+    border-bottom: 1px solid #2c312b;
+    transition: border-color 0.18s;
+}
+
+.post-create-title-block input:focus {
+    border-color: rgb(200 255 61 / 60%);
+}
+
+.post-create-title-block input::placeholder,
+.post-create-content-block textarea::placeholder {
+    color: #4d534c;
+    opacity: 1;
+}
+
+.post-create-section-line {
+    position: relative;
+    height: 1px;
+    margin: 40px 0;
+    background: var(--post-line-soft);
+}
+
+.post-create-section-line span {
+    position: absolute;
+    top: 50%;
+    right: 0;
+    padding-left: 12px;
+    color: #4f554e;
+    background: var(--post-panel);
+    font-size: 8px;
+    font-weight: 850;
+    letter-spacing: 0.16em;
+    transform: translateY(-50%);
+}
+
+/* 본문 작성 보조 버튼은 기능이 있는 에디터 도구 역할을 한다. */
+.post-create-prompt-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 7px;
+    margin: 22px 0 17px;
+}
+
+.post-create-prompt-row > span {
+    margin-right: 4px;
+    color: #565c55;
+    font-size: 8px;
+    font-weight: 850;
+    letter-spacing: 0.13em;
+}
+
+.post-create-prompt-row button {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 10px;
+    color: #8e948b;
+    background: #111411;
+    border: 1px solid #2c322b;
+    border-radius: 999px;
+    font-size: 10px;
+    transition:
+            color 0.15s,
+            border-color 0.15s,
+            background 0.15s;
+}
+
+.post-create-prompt-row button i {
+    color: var(--post-accent);
+    font-style: normal;
+}
+
+.post-create-prompt-row button:hover {
+    color: var(--post-text);
+    background: #1d211c;
+    border-color: #4d5548;
+}
+
+.post-create-content-block textarea {
+    min-height: 265px;
+    padding: 20px 21px;
+    resize: vertical;
+    font-size: 15px;
+    line-height: 1.8;
+    background:
+            linear-gradient(
+                    90deg,
+                    var(--post-accent) 2px,
+                    transparent 2px
+            ),
+            #101310;
+    border: 1px solid #2c322b;
+    border-radius: 3px 12px 12px 3px;
+    transition:
+            border-color 0.18s,
+            box-shadow 0.18s;
+}
+
+.post-create-content-block textarea:focus {
+    border-color: #4d5648;
+    box-shadow: 0 0 0 3px rgb(200 255 61 / 4%);
+}
+
+.post-create-editor-footer {
+    justify-content: space-between;
+    gap: 24px;
+    margin-top: 30px;
+    padding-top: 27px;
+    border-top: 1px solid var(--post-line-soft);
+}
+
+.post-create-visibility {
+    gap: 11px;
+}
+
+.post-create-visibility-icon {
+    display: grid;
+    width: 34px;
+    height: 34px;
+    place-items: center;
+    color: var(--post-accent);
+    background: #111411;
+    border: 1px solid #2e342d;
+    border-radius: 50%;
+    font-size: 13px;
+}
+
+.post-create-visibility > span:last-child {
+    display: grid;
+    gap: 3px;
+}
+
+.post-create-visibility strong {
+    color: #bac0b6;
+    font-size: 11px;
+}
+
+.post-create-visibility small {
+    color: #5f655d;
+    font-size: 9px;
+}
+
+.post-create-actions {
+    gap: 9px;
+}
+
+.post-create-cancel-button {
+    min-height: 52px;
+    padding: 0 16px;
+    color: #868c83;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 9px;
+    font-size: 11px;
+    font-weight: 750;
+    transition:
+            color 0.15s,
+            border-color 0.15s;
+}
+
+.post-create-cancel-button:hover {
+    color: var(--post-text);
+    border-color: #363c35;
+}
+
+.post-create-submit-button {
+    min-width: 188px;
+    min-height: 58px;
+    justify-content: space-between;
+    gap: 18px;
+    padding: 0 10px 0 19px;
+    color: var(--post-bg);
+    background: var(--post-accent);
+    border: 1px solid var(--post-accent);
+    border-radius: 11px;
+    transition:
+            background 0.18s,
+            border-color 0.18s,
+            transform 0.18s,
+            opacity 0.18s;
+}
+
+.post-create-submit-button > span {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 2px;
+    font-size: 12px;
+    font-weight: 900;
+}
+
+.post-create-submit-button small {
+    font-size: 7px;
+    font-weight: 900;
+    letter-spacing: 0.13em;
+    opacity: 0.58;
+}
+
+.post-create-submit-button i {
+    display: grid;
+    width: 36px;
+    height: 36px;
+    place-items: center;
+    color: var(--post-text);
+    font-size: 16px;
+    font-style: normal;
+    background: var(--post-bg);
+    border-radius: 8px;
+}
+
+.post-create-submit-button:hover:not(:disabled) {
+    background: #d5ff69;
+    border-color: #d5ff69;
+    transform: translateY(-2px);
+}
+
+.post-create-submit-button:disabled {
+    color: #555a52;
+    background: #252a24;
+    border-color: #30362f;
+    cursor: not-allowed;
+}
+
+.post-create-submit-button:disabled i {
+    color: #6b7168;
+    background: #191c19;
+}
+
+/* 태블릿에서는 소개와 에디터를 세로로 배치한다. */
+@media (max-width: 980px) {
+    .post-create-workspace {
+        grid-template-columns: 1fr;
+    }
+
+    .post-create-side-panel {
+        position: static;
+        display: grid;
+        grid-template-columns:
+      minmax(280px, 1fr)
+      minmax(290px, 0.9fr);
+        align-items: end;
+        gap: 38px;
+    }
+
+    .post-create-intro h1 {
+        font-size: clamp(58px, 10vw, 82px);
+    }
+
+    .post-create-preview {
+        margin-top: 0;
+    }
+}
+
+/* 모바일에서는 모든 영역을 한 줄로 배치한다. */
+@media (max-width: 680px) {
+    .post-create-global-header {
+        grid-template-columns: 1fr auto;
+        padding: 21px 18px;
+    }
+
+    .post-create-header-center {
+        display: none;
+    }
+
+    .post-create-back-button > span {
+        display: none;
+    }
+
+    .post-create-workspace {
+        gap: 38px;
+        padding: 44px 18px 62px;
+    }
+
+    .post-create-side-panel {
+        display: block;
+    }
+
+    .post-create-intro h1 {
+        font-size: clamp(53px, 16vw, 72px);
+        letter-spacing: -4px;
+    }
+
+    .post-create-description br {
+        display: none;
+    }
+
+    .post-create-preview {
+        margin-top: 38px;
+    }
+
+    .post-create-editor {
+        padding: 29px 22px 24px;
+        border-radius: 3px 16px 16px 16px;
+    }
+
+    .post-create-editor-header {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .post-create-progress {
+        margin-top: 22px;
+    }
+
+    .post-create-field-heading small {
+        display: none;
+    }
+
+    .post-create-title-block input {
+        font-size: 27px;
+    }
+
+    .post-create-prompt-row > span {
+        width: 100%;
+        margin-bottom: 2px;
+    }
+
+    .post-create-content-block textarea {
+        min-height: 290px;
+        padding: 18px 16px;
+    }
+
+    .post-create-editor-footer {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .post-create-actions {
+        justify-content: flex-end;
+    }
+}
+
+@media (max-width: 430px) {
+    .post-create-visibility {
+        display: none;
+    }
+
+    .post-create-actions,
+    .post-create-cancel-button,
+    .post-create-submit-button {
+        width: 100%;
+    }
+
+    .post-create-cancel-button {
+        width: 74px;
+    }
+
+    .post-create-submit-button {
+        flex: 1;
+    }
+}
+
+/* 키보드로 이동할 때 현재 선택된 버튼을 명확하게 표시한다. */
+.post-create-logo:focus-visible,
+.post-create-back-button:focus-visible,
+.post-create-prompt-row button:focus-visible,
+.post-create-cancel-button:focus-visible,
+.post-create-submit-button:focus-visible {
+    outline: 2px solid var(--post-accent);
+    outline-offset: 3px;
+}
+
+/* 움직임 감소 설정을 사용하는 환경에서는 애니메이션을 제거한다. */
+@media (prefers-reduced-motion: reduce) {
+    .post-create-back-button i,
+    .post-create-progress span,
+    .post-create-prompt-row button,
+    .post-create-cancel-button,
+    .post-create-submit-button {
+        transition: none;
+    }
+}
