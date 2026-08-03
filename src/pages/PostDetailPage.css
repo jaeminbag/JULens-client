@@ -106,6 +106,44 @@
     font-size: 14px;
 }
 
+/* 작성자에게만 표시되는 게시글 관리 버튼 영역이다. */
+.post-detail-author-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto;
+}
+
+.post-detail-delete-button {
+    padding: 8px 13px;
+    border: 1px solid #674040;
+    border-radius: 999px;
+    color: #ff9292;
+    background: transparent;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.post-detail-delete-button:hover:not(:disabled) {
+    color: #111311;
+    background: #ff7979;
+    border-color: #ff7979;
+}
+
+.post-detail-delete-button:disabled {
+    cursor: wait;
+    opacity: 0.55;
+}
+
+/* 삭제 요청 실패 메시지를 표시한다. */
+.post-detail-delete-error {
+    margin: 14px 0 0;
+    color: #ff7979;
+    font-size: 13px;
+}
+
 .post-detail-content {
     margin: 48px 0 0;
     color: #d7dad3;

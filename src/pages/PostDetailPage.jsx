@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { getLoggedInUserId } from '../utils/auth.js'
 import './PostDetailPage.css'
 
 // 서버의 작성 시각을 상세 페이지용 날짜 형식으로 변환한다.
@@ -29,6 +30,18 @@ function PostDetailPage() {
     const [post, setPost] = useState(null)
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState('')
+
+    // 게시글 삭제 요청의 진행 상태와 오류 메시지를 관리한다.
+    const [isDeleting, setIsDeleting] = useState(false)
+    const [deleteError, setDeleteError] = useState('')
+
+    // JWT의 사용자 ID와 게시글 작성자 ID가 같을 때만 작성자로 판단한다.
+    const loggedInUserId = getLoggedInUserId()
+
+    const isAuthor =
+        post !== null &&
+        loggedInUserId !== null &&
+        Number(post.userId) === loggedInUserId
 
     // 좋아요 요청 중 중복 클릭을 막고 오류 메시지를 관리한다.
     const [isLikeUpdating, setIsLikeUpdating] = useState(false)
@@ -312,6 +325,73 @@ function PostDetailPage() {
         }
     }
 
+    // 현재 로그인 사용자가 작성한 게시글을 삭제한다.
+    const handlePostDelete = async () => {
+        const accessToken = localStorage.getItem('accessToken')
+
+        // 게시글이 없거나 작성자가 아니거나 이미 삭제 요청 중이면 실행하지 않는다.
+        if (!post || !isAuthor || isDeleting) {
+            return
+        }
+
+        if (!accessToken) {
+            setDeleteError('게시글을 삭제하려면 로그인이 필요합니다.')
+            return
+        }
+
+        // 실수로 누른 경우를 막기 위해 삭제 전 한 번 더 확인한다.
+        const shouldDelete = window.confirm(
+            '게시글을 삭제하시겠습니까?\n삭제한 게시글은 복구할 수 없습니다.',
+        )
+
+        if (!shouldDelete) {
+            return
+        }
+
+        try {
+            setIsDeleting(true)
+            setDeleteError('')
+
+            const response = await fetch(
+                `http://localhost:8080/posts/${postId}`,
+                {
+                    method: 'DELETE',
+                    headers: {
+                        Authorization: `Bearer ${accessToken}`,
+                    },
+                },
+            )
+
+            // 백엔드의 ApiResponse<Void> 응답을 변환한다.
+            const result = await response.json()
+
+            if (!response.ok || !result.success) {
+                throw new Error(
+                    result.message || '게시글 삭제에 실패했습니다.',
+                )
+            }
+
+            alert('게시글이 삭제되었습니다.')
+
+            // 삭제된 상세 페이지가 브라우저 뒤로가기에 남지 않도록 목록으로 교체 이동한다.
+            navigate('/', { replace: true })
+        } catch (requestError) {
+            if (requestError instanceof TypeError) {
+                setDeleteError(
+                    '서버에 연결할 수 없습니다. 백엔드 서버를 확인해주세요.',
+                )
+            } else {
+                setDeleteError(
+                    requestError instanceof Error
+                        ? requestError.message
+                        : '게시글 삭제 중 오류가 발생했습니다.',
+                )
+            }
+        } finally {
+            setIsDeleting(false)
+        }
+    }
+
     return (
         <main className="post-detail-page">
             <header className="post-detail-header">
@@ -358,7 +438,26 @@ function PostDetailPage() {
                         <div className="post-detail-author">
                             <span>WRITTEN BY</span>
                             <strong>@{post.nickname}</strong>
+
+                            {/* 로그인 사용자가 작성자인 경우에만 게시글 관리 버튼을 표시한다. */}
+                            {isAuthor && (
+                                <div className="post-detail-author-actions">
+                                    <button
+                                        className="post-detail-delete-button"
+                                        type="button"
+                                        disabled={isDeleting}
+                                        onClick={handlePostDelete}
+                                    >
+                                        {isDeleting ? '삭제 중...' : '삭제'}
+                                    </button>
+                                </div>
+                            )}
                         </div>
+
+                        {/* 삭제 요청만 실패했을 때 게시글은 유지하고 오류만 표시한다. */}
+                        {deleteError && (
+                            <p className="post-detail-delete-error">{deleteError}</p>
+                        )}
 
                         {/* 줄바꿈을 유지하면서 게시글 전체 내용을 표시한다. */}
                         <p className="post-detail-content">
