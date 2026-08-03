@@ -676,7 +676,19 @@ function App() {
                       <span>@{post.authorNickname}</span>
 
                       <div className="post-stats">
+                        {/* 목록 API에서 받은 좋아요 수와 댓글 수를 표시한다. */}
                         <span>♡ {post.likeCount ?? 0}</span>
+                        <span>
+                          <svg
+                              className="post-comment-icon"
+                              viewBox="0 0 24 24"
+                              aria-hidden="true"
+                          >
+    <path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z" />
+  </svg>
+
+                          {post.commentCount ?? 0}
+</span>
                       </div>
                     </div>
                   </article>

@@ -483,5 +483,23 @@
   }
 }
 
+/* 좋아요와 댓글 아이콘을 숫자와 나란히 정렬한다. */
+.post-stats span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+/* 댓글을 나타내는 선 형태의 말풍선 아이콘이다. */
+.post-comment-icon {
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
 
 
