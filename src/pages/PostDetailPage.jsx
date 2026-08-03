@@ -30,6 +30,19 @@ function PostDetailPage() {
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState('')
 
+    // 좋아요 요청 중 중복 클릭을 막고 오류 메시지를 관리한다.
+    const [isLikeUpdating, setIsLikeUpdating] = useState(false)
+    const [likeError, setLikeError] = useState('')
+
+    // 게시글에 작성된 댓글 목록을 관리한다.
+    const [comments, setComments] = useState([])
+    const [isCommentsLoading, setIsCommentsLoading] = useState(true)
+
+    // 댓글 입력 내용과 작성 요청 상태를 관리한다.
+    const [commentContent, setCommentContent] = useState('')
+    const [isCommentSubmitting, setIsCommentSubmitting] = useState(false)
+    const [commentError, setCommentError] = useState('')
+
     useEffect(() => {
         const fetchPost = async () => {
             const accessToken = localStorage.getItem('accessToken')
@@ -89,6 +102,216 @@ function PostDetailPage() {
         fetchPost()
     }, [postId])
 
+    useEffect(() => {
+        const fetchComments = async () => {
+            const accessToken = localStorage.getItem('accessToken')
+
+            if (!accessToken) {
+                setCommentError('댓글을 확인하려면 로그인이 필요합니다.')
+                setIsCommentsLoading(false)
+                return
+            }
+
+            try {
+                setIsCommentsLoading(true)
+                setCommentError('')
+
+                // 현재 게시글에 작성된 댓글을 오래된 순서대로 조회한다.
+                const response = await fetch(
+                    `http://localhost:8080/posts/${postId}/comments`,
+                    {
+                        method: 'GET',
+                        headers: {
+                            Authorization: `Bearer ${accessToken}`,
+                        },
+                    },
+                )
+
+                const result = await response.json()
+
+                if (!response.ok || !result.success) {
+                    throw new Error(
+                        result.message || '댓글을 불러오지 못했습니다.',
+                    )
+                }
+
+                // ApiResponse의 data에는 CommentResponse 배열이 들어 있다.
+                setComments(result.data ?? [])
+            } catch (requestError) {
+                setComments([])
+
+                if (requestError instanceof TypeError) {
+                    setCommentError(
+                        '서버에 연결할 수 없습니다. 백엔드 서버를 확인해주세요.',
+                    )
+                } else {
+                    setCommentError(
+                        requestError instanceof Error
+                            ? requestError.message
+                            : '댓글 조회 중 오류가 발생했습니다.',
+                    )
+                }
+            } finally {
+                setIsCommentsLoading(false)
+            }
+        }
+
+        fetchComments()
+    }, [postId])
+
+    // 현재 좋아요 상태에 따라 추가 또는 취소 요청을 보낸다.
+    const handleLikeClick = async () => {
+        const accessToken = localStorage.getItem('accessToken')
+
+        // 게시글을 아직 불러오지 않았거나 요청 중이면 실행하지 않는다.
+        if (!post || isLikeUpdating) {
+            return
+        }
+
+        if (!accessToken) {
+            setLikeError('좋아요를 누르려면 로그인이 필요합니다.')
+            return
+        }
+
+        // 현재 좋아요 상태의 반대 상태로 변경할 예정이다.
+        const nextLiked = !post.liked
+
+        try {
+            setIsLikeUpdating(true)
+            setLikeError('')
+
+            const response = await fetch(
+                `http://localhost:8080/posts/${postId}/likes`,
+                {
+                    // 좋아요가 없으면 추가하고, 이미 있으면 취소한다.
+                    method: nextLiked ? 'POST' : 'DELETE',
+                    headers: {
+                        Authorization: `Bearer ${accessToken}`,
+                    },
+                },
+            )
+
+            // 좋아요 API는 ApiResponse<Void>를 반환한다.
+            const result = await response.json()
+
+            if (!response.ok || !result.success) {
+                throw new Error(
+                    result.message || '좋아요 처리에 실패했습니다.',
+                )
+            }
+
+            // 요청 성공 후 화면의 좋아요 상태와 개수를 즉시 갱신한다.
+            setPost((currentPost) => {
+                if (!currentPost) {
+                    return currentPost
+                }
+
+                const currentLikeCount = currentPost.likeCount ?? 0
+
+                return {
+                    ...currentPost,
+                    liked: nextLiked,
+                    likeCount: nextLiked
+                        ? currentLikeCount + 1
+                        : Math.max(0, currentLikeCount - 1),
+                }
+            })
+        } catch (requestError) {
+            if (requestError instanceof TypeError) {
+                setLikeError(
+                    '서버에 연결할 수 없습니다. 백엔드 서버를 확인해주세요.',
+                )
+            } else {
+                setLikeError(
+                    requestError instanceof Error
+                        ? requestError.message
+                        : '좋아요 처리 중 오류가 발생했습니다.',
+                )
+            }
+        } finally {
+            setIsLikeUpdating(false)
+        }
+    }
+
+    // 입력한 내용을 현재 게시글의 댓글로 등록한다.
+    const handleCommentSubmit = async (event) => {
+        event.preventDefault()
+
+        const accessToken = localStorage.getItem('accessToken')
+        const trimmedContent = commentContent.trim()
+
+        if (isCommentSubmitting) {
+            return
+        }
+
+        if (!accessToken) {
+            setCommentError('댓글을 작성하려면 로그인이 필요합니다.')
+            return
+        }
+
+        if (!trimmedContent) {
+            setCommentError('댓글 내용을 입력해주세요.')
+            return
+        }
+
+        if (trimmedContent.length > 500) {
+            setCommentError('댓글은 최대 500자까지 작성할 수 있습니다.')
+            return
+        }
+
+        try {
+            setIsCommentSubmitting(true)
+            setCommentError('')
+
+            const response = await fetch(
+                `http://localhost:8080/posts/${postId}/comments`,
+                {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${accessToken}`,
+                    },
+
+                    // 백엔드 CommentCreateRequest의 content 필드에 맞춘다.
+                    body: JSON.stringify({
+                        content: trimmedContent,
+                    }),
+                },
+            )
+
+            const result = await response.json()
+
+            if (!response.ok || !result.success) {
+                throw new Error(
+                    result.message || '댓글 작성에 실패했습니다.',
+                )
+            }
+
+            // 서버가 반환한 새 댓글을 기존 댓글 목록 마지막에 추가한다.
+            setComments((currentComments) => [
+                ...currentComments,
+                result.data,
+            ])
+
+            // 작성 성공 후 입력창을 비운다.
+            setCommentContent('')
+        } catch (requestError) {
+            if (requestError instanceof TypeError) {
+                setCommentError(
+                    '서버에 연결할 수 없습니다. 백엔드 서버를 확인해주세요.',
+                )
+            } else {
+                setCommentError(
+                    requestError instanceof Error
+                        ? requestError.message
+                        : '댓글 작성 중 오류가 발생했습니다.',
+                )
+            }
+        } finally {
+            setIsCommentSubmitting(false)
+        }
+    }
+
     return (
         <main className="post-detail-page">
             <header className="post-detail-header">
@@ -141,6 +364,107 @@ function PostDetailPage() {
                         <p className="post-detail-content">
                             {post.content}
                         </p>
+                        {/* 현재 사용자의 좋아요 상태와 전체 좋아요 개수를 표시한다. */}
+                        <div className="post-detail-engagement">
+                            <button
+                                className={
+                                    post.liked
+                                        ? 'post-detail-like-button liked'
+                                        : 'post-detail-like-button'
+                                }
+                                type="button"
+                                aria-label={post.liked ? '좋아요 취소' : '좋아요'}
+                                aria-pressed={post.liked}
+                                disabled={isLikeUpdating}
+                                onClick={handleLikeClick}
+                            >
+                                {/* 좋아요 여부는 배경색으로만 표시하고 하트 모양은 유지한다. */}
+                                <span className="post-detail-like-icon" aria-hidden="true">
+        ♡
+    </span>
+
+                                <strong>{post.likeCount ?? 0}</strong>
+                            </button>
+
+                            {likeError && (
+                                // 좋아요 요청만 실패했을 때 게시글 전체를 오류 화면으로 바꾸지 않는다.
+                                <p className="post-detail-like-error">{likeError}</p>
+                            )}
+                        </div>
+                        {/* 댓글 작성과 댓글 목록을 표시하는 영역이다. */}
+                        <section className="post-detail-comments">
+                            <div className="post-detail-comments-header">
+                                <span>COMMENTS</span>
+                                <strong>{comments.length}</strong>
+                            </div>
+
+                            <form
+                                className="post-detail-comment-form"
+                                onSubmit={handleCommentSubmit}
+                            >
+        <textarea
+            value={commentContent}
+            maxLength={500}
+            placeholder="댓글을 입력해주세요."
+            aria-label="댓글 내용"
+            disabled={isCommentSubmitting}
+            onChange={(event) => {
+                // 입력창의 현재 내용을 상태에 저장한다.
+                setCommentContent(event.target.value)
+            }}
+        />
+
+                                <div className="post-detail-comment-form-bottom">
+                                    <span>{commentContent.length} / 500</span>
+
+                                    <button
+                                        type="submit"
+                                        disabled={
+                                            isCommentSubmitting ||
+                                            isCommentsLoading ||
+                                            !commentContent.trim()
+                                        }
+                                    >
+                                        {isCommentSubmitting ? '작성 중...' : '댓글 작성'}
+                                    </button>
+                                </div>
+                            </form>
+
+                            {commentError && (
+                                <p className="post-detail-comment-error">
+                                    {commentError}
+                                </p>
+                            )}
+
+                            <div className="post-detail-comment-list">
+                                {isCommentsLoading ? (
+                                    <p className="post-detail-comment-status">
+                                        댓글을 불러오는 중입니다...
+                                    </p>
+                                ) : comments.length === 0 ? (
+                                    <p className="post-detail-comment-status">
+                                        아직 작성된 댓글이 없습니다.
+                                    </p>
+                                ) : (
+                                    comments.map((comment) => (
+                                        <article
+                                            className="post-detail-comment"
+                                            key={comment.commentId}
+                                        >
+                                            <div className="post-detail-comment-top">
+                                                <strong>@{comment.nickname}</strong>
+                                                <span>
+                            {formatPostDate(comment.createdAt)}
+                        </span>
+                                            </div>
+
+                                            {/* 댓글의 줄바꿈을 유지해 표시한다. */}
+                                            <p>{comment.content}</p>
+                                        </article>
+                                    ))
+                                )}
+                            </div>
+                        </section>
                     </article>
                 )}
             </section>

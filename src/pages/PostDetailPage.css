@@ -163,3 +163,220 @@
         font-size: 16px;
     }
 }
+
+/* 본문 아래의 좋아요 기능 영역이다. */
+.post-detail-engagement {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-top: 56px;
+    padding: 28px 0;
+    border-top: 1px solid #343934;
+    border-bottom: 1px solid #343934;
+}
+
+.post-detail-like-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-width: 76px;
+    padding: 12px 16px;
+
+    border: 1px solid #484d47;
+    border-radius: 999px;
+    color: #d7dad3;
+    background: transparent;
+
+    font: inherit;
+    cursor: pointer;
+}
+
+
+.post-detail-like-button:hover:not(:disabled) {
+    border-color: #c8ff3d;
+    transform: translateY(-2px);
+}
+
+/* 현재 사용자가 좋아요를 누른 상태를 강조한다. */
+.post-detail-like-button.liked {
+    background: #c8ff3d;
+    border-color: #c8ff3d;
+    color: #111311;
+}
+
+.post-detail-like-icon {
+    font-size: 20px;
+    line-height: 1;
+}
+
+.post-detail-like-button strong {
+    margin-left: 0;
+    font-size: 13px;
+}
+
+.post-detail-like-button:disabled {
+    cursor: wait;
+    opacity: 1;
+}
+
+.post-detail-like-error {
+    margin: 0;
+    color: #ff7979;
+    font-size: 13px;
+}
+
+@media (max-width: 640px) {
+    .post-detail-engagement {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .post-detail-like-error {
+        line-height: 1.5;
+    }
+}
+
+/* 댓글 작성 폼과 댓글 목록을 감싸는 영역이다. */
+.post-detail-comments {
+    margin-top: 72px;
+}
+
+.post-detail-comments-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding-bottom: 18px;
+    border-bottom: 1px solid #343934;
+}
+
+.post-detail-comments-header span {
+    color: #c8ff3d;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+}
+
+.post-detail-comments-header strong {
+    color: #92978f;
+    font-size: 13px;
+}
+
+/* 댓글 내용을 입력하는 폼이다. */
+.post-detail-comment-form {
+    margin-top: 24px;
+    padding: 18px;
+    border: 1px solid #343934;
+    border-radius: 16px;
+    background: #171a17;
+}
+
+.post-detail-comment-form textarea {
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 110px;
+    padding: 0;
+    border: 0;
+    outline: 0;
+    resize: vertical;
+    color: #e1e4dd;
+    background: transparent;
+    font: inherit;
+    font-size: 15px;
+    line-height: 1.7;
+}
+
+.post-detail-comment-form textarea::placeholder {
+    color: #747972;
+}
+
+.post-detail-comment-form-bottom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 14px;
+}
+
+.post-detail-comment-form-bottom span {
+    color: #777c75;
+    font-size: 12px;
+}
+
+.post-detail-comment-form-bottom button {
+    min-width: 96px;
+    padding: 10px 16px;
+    border: 0;
+    border-radius: 999px;
+    color: #111311;
+    background: #c8ff3d;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.post-detail-comment-form-bottom button:disabled {
+    cursor: not-allowed;
+    opacity: 0.45;
+}
+
+.post-detail-comment-error {
+    margin: 14px 0 0;
+    color: #ff7979;
+    font-size: 13px;
+}
+
+/* 작성된 댓글 목록이다. */
+.post-detail-comment-list {
+    margin-top: 30px;
+}
+
+.post-detail-comment {
+    padding: 24px 0;
+    border-bottom: 1px solid #2e322e;
+}
+
+.post-detail-comment-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.post-detail-comment-top strong {
+    color: #dfe2db;
+    font-size: 14px;
+}
+
+.post-detail-comment-top span {
+    color: #777c75;
+    font-size: 12px;
+}
+
+.post-detail-comment > p {
+    margin: 14px 0 0;
+    color: #c9cdc5;
+    font-size: 15px;
+    line-height: 1.7;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.post-detail-comment-status {
+    margin: 36px 0;
+    color: #858a82;
+    text-align: center;
+    font-size: 14px;
+}
+
+@media (max-width: 640px) {
+    .post-detail-comments {
+        margin-top: 52px;
+    }
+
+    .post-detail-comment-top {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 6px;
+    }
+}
