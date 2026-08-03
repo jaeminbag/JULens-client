@@ -1,20 +1,113 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
+import { getLoggedInUserId } from '../utils/auth.js'
 import './PostCreatePage.css'
 
 // 본문을 구조적으로 작성할 때 빠르게 삽입할 수 있는 문구다.
 const writingPrompts = ['판단 근거', '리스크 요인', '다음 관찰 포인트']
 
 // JULens 커뮤니티의 게시글 작성 전용 페이지다.
-function PostCreatePage() {
+function PostCreatePage({ mode = 'create' }) {
     const navigate = useNavigate()
+    const { postId } = useParams()
 
-    // 게시글 작성 API에 전달할 제목과 내용을 관리한다.
+    // 라우터에서 전달받은 mode가 edit이면 게시글 수정 화면으로 사용한다.
+    const isEditMode = mode === 'edit'
+
+    // 작성 모드에서는 빈 값으로 시작하고,
+    // 수정 모드에서는 조회한 기존 제목과 내용이 이 상태에 저장된다.
     const [postTitle, setPostTitle] = useState('')
     const [postContent, setPostContent] = useState('')
 
-    // 게시글 등록 요청 중 버튼을 다시 누르지 못하게 관리한다.
+    // 수정할 기존 게시글을 불러오는 상태와 오류 메시지를 관리한다.
+    const [isPostLoading, setIsPostLoading] = useState(isEditMode)
+    const [loadError, setLoadError] = useState('')
+
+    // 게시글 등록 또는 수정 요청 중 버튼을 다시 누르지 못하게 관리한다.
     const [isSubmitting, setIsSubmitting] = useState(false)
+
+    useEffect(() => {
+        // 작성 모드에서는 기존 게시글을 조회할 필요가 없다.
+        if (!isEditMode) {
+            return
+        }
+
+        // 수정 페이지에 표시할 기존 게시글을 상세 조회 API로 가져온다.
+        const fetchPostForEdit = async () => {
+            const accessToken = localStorage.getItem('accessToken')
+
+            if (!accessToken) {
+                setLoadError('게시글을 수정하려면 로그인이 필요합니다.')
+                setIsPostLoading(false)
+                return
+            }
+
+            try {
+                setIsPostLoading(true)
+                setLoadError('')
+
+                const response = await fetch(
+                    `http://localhost:8080/posts/${postId}`,
+                    {
+                        method: 'GET',
+                        headers: {
+                            Authorization: `Bearer ${accessToken}`,
+                        },
+                    },
+                )
+
+                // ApiResponse<PostResponse>를 자바스크립트 객체로 변환한다.
+                const result = await response.json()
+
+                if (!response.ok || !result.success) {
+                    throw new Error(
+                        result.message ||
+                        '수정할 게시글을 불러오지 못했습니다.',
+                    )
+                }
+
+                const existingPost = result.data
+                const loggedInUserId = getLoggedInUserId()
+
+                if (!existingPost) {
+                    throw new Error('게시글 정보가 없습니다.')
+                }
+
+                // 버튼을 숨기는 것뿐 아니라 직접 수정 주소로 들어온 경우도 차단한다.
+                if (
+                    loggedInUserId === null ||
+                    Number(existingPost.userId) !== loggedInUserId
+                ) {
+                    setLoadError(
+                        '본인이 작성한 게시글만 수정할 수 있습니다.',
+                    )
+                    return
+                }
+
+                // 조회한 기존 값을 입력창의 상태에 저장한다.
+                // value={postTitle}, value={postContent}와 연결되어 있으므로
+                // 입력창에 기존 제목과 내용이 자동으로 표시된다.
+                setPostTitle(existingPost.title ?? '')
+                setPostContent(existingPost.content ?? '')
+            } catch (requestError) {
+                if (requestError instanceof TypeError) {
+                    setLoadError(
+                        '서버에 연결할 수 없습니다. 백엔드 서버를 확인해주세요.',
+                    )
+                } else {
+                    setLoadError(
+                        requestError instanceof Error
+                            ? requestError.message
+                            : '게시글을 불러오는 중 오류가 발생했습니다.',
+                    )
+                }
+            } finally {
+                setIsPostLoading(false)
+            }
+        }
+
+        fetchPostForEdit()
+    }, [isEditMode, navigate, postId])
 
     // 입력이 끝난 항목 수를 계산해 작성 진행도에 사용한다.
     const completedFieldCount =
@@ -32,8 +125,13 @@ function PostCreatePage() {
         postContent.trim() ||
         '작성 중인 내용이 이곳에 실시간으로 표시됩니다. 관찰한 움직임과 판단 근거를 기록해보세요.'
 
-    // 로고·나가기·취소 버튼을 누르면 메인 페이지로 이동한다.
+    // 작성 취소는 목록으로, 수정 취소는 원래 게시글 상세 화면으로 돌아간다.
     const handleCancel = () => {
+        if (isEditMode) {
+            navigate(`/posts/${postId}`)
+            return
+        }
+
         navigate('/')
     }
 
@@ -44,31 +142,38 @@ function PostCreatePage() {
         setPostContent(`${postContent}${spacing}${prompt}\n`)
     }
 
-    // 작성한 제목과 내용을 서버에 전달해 게시글을 등록한다.
+    // 작성 모드에서는 새 게시글을 등록하고,
+    // 수정 모드에서는 기존 게시글의 제목과 내용을 모두 수정한다.
     const handleSubmit = async (event) => {
         event.preventDefault()
 
         const accessToken = localStorage.getItem('accessToken')
 
-        // 로그인 토큰이 없으면 게시글을 작성할 수 없다.
         if (!accessToken) {
             alert('로그인이 필요합니다.')
-            navigate('/login')
+            navigate('/')
             return
         }
 
+        // 수정 여부에 따라 API 주소와 HTTP 메서드를 결정한다.
+        const requestUrl = isEditMode
+            ? `http://localhost:8080/posts/${postId}`
+            : 'http://localhost:8080/posts'
+
+        const requestMethod = isEditMode ? 'PUT' : 'POST'
+
         try {
-            // 요청이 진행되는 동안 등록 버튼을 비활성화한다.
             setIsSubmitting(true)
 
-            const response = await fetch('http://localhost:8080/posts', {
-                method: 'POST',
+            const response = await fetch(requestUrl, {
+                method: requestMethod,
                 headers: {
                     'Content-Type': 'application/json',
                     Authorization: `Bearer ${accessToken}`,
                 },
 
-                // 작성자 정보는 JWT에서 가져오므로 제목과 내용만 전달한다.
+                // PUT 전체 수정 방식이므로 수정하지 않은 값도 포함해
+                // 제목과 내용을 모두 서버에 전달한다.
                 body: JSON.stringify({
                     title: postTitle.trim(),
                     content: postContent.trim(),
@@ -77,21 +182,81 @@ function PostCreatePage() {
 
             const result = await response.json()
 
-            // 400, 401, 500 등의 응답은 게시글 등록 실패로 처리한다.
-            if (!response.ok) {
+            if (!response.ok || !result.success) {
                 throw new Error(
-                    result.message || '게시글 등록에 실패했습니다.',
+                    result.message ||
+                    (isEditMode
+                        ? '게시글 수정에 실패했습니다.'
+                        : '게시글 등록에 실패했습니다.'),
                 )
             }
 
-            alert('게시글이 등록되었습니다.')
-            navigate('/')
-        } catch (error) {
-            alert(error.message)
+            if (isEditMode) {
+                alert('게시글이 수정되었습니다.')
+
+                // 수정 결과를 바로 확인할 수 있도록 해당 상세 페이지로 이동한다.
+                navigate(`/posts/${postId}`)
+            } else {
+                alert('게시글이 등록되었습니다.')
+                navigate('/')
+            }
+        } catch (requestError) {
+            if (requestError instanceof TypeError) {
+                alert(
+                    '서버에 연결할 수 없습니다. 백엔드 서버를 확인해주세요.',
+                )
+            } else {
+                alert(
+                    requestError instanceof Error
+                        ? requestError.message
+                        : '게시글 처리 중 오류가 발생했습니다.',
+                )
+            }
         } finally {
-            // 성공하거나 실패해도 요청 상태를 다시 해제한다.
             setIsSubmitting(false)
         }
+    }
+
+    // 수정할 게시글을 가져오기 전에는 빈 입력창 대신 로딩 화면을 표시한다.
+    if (isEditMode && isPostLoading) {
+        return (
+            <main className="post-create-page">
+                <div
+                    className="post-create-background-mark"
+                    aria-hidden="true"
+                >
+                    J
+                </div>
+
+                <section className="post-create-load-state">
+                    <p>EDIT COMMUNITY SIGNAL</p>
+                    <h1>기존 게시글을 불러오는 중입니다...</h1>
+                </section>
+            </main>
+        )
+    }
+
+// 조회 실패 또는 다른 사용자의 수정 주소로 접근한 경우다.
+    if (isEditMode && loadError) {
+        return (
+            <main className="post-create-page">
+                <div
+                    className="post-create-background-mark"
+                    aria-hidden="true"
+                >
+                    J
+                </div>
+
+                <section className="post-create-load-state is-error">
+                    <p>EDIT COMMUNITY SIGNAL · ERROR</p>
+                    <h1>{loadError}</h1>
+
+                    <button type="button" onClick={() => navigate('/')}>
+                        게시글 목록으로 돌아가기
+                    </button>
+                </section>
+            </main>
+        )
     }
 
     return (
@@ -114,7 +279,8 @@ function PostCreatePage() {
                 <div className="post-create-header-center">
                     <span>COMMUNITY</span>
                     <i aria-hidden="true" />
-                    <strong>CREATE SIGNAL</strong>
+                    {/* 현재 에디터가 작성 화면인지 수정 화면인지 표시한다. */}
+                    <strong>{isEditMode ? 'EDIT SIGNAL' : 'CREATE SIGNAL'}</strong>
                 </div>
 
                 <button
@@ -132,7 +298,7 @@ function PostCreatePage() {
                     <div className="post-create-intro">
                         <p className="post-create-eyebrow">
                             <span aria-hidden="true" />
-                            NEW COMMUNITY SIGNAL
+                            {isEditMode ? 'EDIT COMMUNITY SIGNAL' : 'NEW COMMUNITY SIGNAL'}
                         </p>
 
                         <h1>
@@ -187,7 +353,7 @@ function PostCreatePage() {
                     <header className="post-create-editor-header">
                         <div>
                             <p>EDITOR / 01</p>
-                            <h2>새 게시글 작성</h2>
+                            <h2>{isEditMode ? '게시글 수정' : '새 게시글 작성'}</h2>
                         </div>
 
                         <span
@@ -327,7 +493,14 @@ function PostCreatePage() {
                                 disabled={!isPostReady || isSubmitting}
                             >
                              <span>
-                            {isSubmitting ? '등록 중...' : '게시글 등록'}
+                            {/* 작성 모드와 수정 모드에 맞는 버튼 문구를 표시한다. */}
+                                 {isSubmitting
+                                     ? isEditMode
+                                         ? '수정 중...'
+                                         : '등록 중...'
+                                     : isEditMode
+                                         ? '수정 완료'
+                                         : '게시글 등록'}
 
                              <small>
                             {isSubmitting

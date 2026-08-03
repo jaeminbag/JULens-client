@@ -439,9 +439,18 @@ function PostDetailPage() {
                             <span>WRITTEN BY</span>
                             <strong>@{post.nickname}</strong>
 
-                            {/* 로그인 사용자가 작성자인 경우에만 게시글 관리 버튼을 표시한다. */}
+                            {/* 로그인 사용자가 작성자인 경우에만 수정·삭제 버튼을 표시한다. */}
                             {isAuthor && (
                                 <div className="post-detail-author-actions">
+                                    <button
+                                        className="post-detail-edit-button"
+                                        type="button"
+                                        disabled={isDeleting}
+                                        onClick={() => navigate(`/posts/${postId}/edit`)}
+                                    >
+                                        수정
+                                    </button>
+
                                     <button
                                         className="post-detail-delete-button"
                                         type="button"

@@ -17,6 +17,12 @@ createRoot(document.getElementById('root')).render(
                 {/* 게시글 작성 전용 페이지 */}
                 <Route path="/posts/new" element={<PostCreatePage />} />
 
+                {/* 기존 게시글을 수정하는 에디터 페이지다. */}
+                <Route
+                    path="/posts/:postId/edit"
+                    element={<PostCreatePage mode="edit" />}
+                />
+
                 {/* 게시글 번호에 해당하는 단건 상세 페이지 */}
                 <Route path="/posts/:postId" element={<PostDetailPage />} />
             </Routes>
