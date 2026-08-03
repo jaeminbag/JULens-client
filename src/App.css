@@ -161,6 +161,7 @@
   border: 1px solid #2d312d;
   border-radius: 16px;
   background: #171a17;
+  cursor: pointer;
   transition: transform 0.15s, border-color 0.15s;
 }
 
@@ -450,6 +451,35 @@
 
   .feed-empty-status {
     display: none;
+  }
+}
+
+/* 비로그인 안내 카드에서 로그인 모달을 여는 버튼이다. */
+.feed-login-button {
+  flex-shrink: 0;
+  padding: 13px 18px;
+  color: #111311;
+  background: #c8ff3d;
+  border: 0;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  transition:
+          background 0.15s,
+          transform 0.15s;
+}
+
+.feed-login-button:hover {
+  background: #d5ff6a;
+  transform: translateY(-2px);
+}
+
+@media (max-width: 640px) {
+  .feed-login-button {
+    align-self: flex-start;
   }
 }
 

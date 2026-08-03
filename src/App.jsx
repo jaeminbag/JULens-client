@@ -121,10 +121,14 @@ function App() {
     const fetchPosts = async () => {
       const accessToken = localStorage.getItem('accessToken')
 
-      // JULens 게시글 API는 로그인한 사용자만 이용할 수 있다.
+      // 로그인하지 않았거나 JWT가 만료되었다면 게시글을 요청하지 않는다.
       if (!isLoggedIn || !isAccessTokenValid(accessToken)) {
+        localStorage.removeItem('accessToken')
+        setIsLoggedIn(false)
         setPosts([])
-        setPostsError('로그인하면 게시글을 확인할 수 있습니다.')
+
+        // 비로그인 안내는 별도 화면으로 표시하므로 오류 메시지는 비운다.
+        setPostsError('')
         setIsPostsLoading(false)
         return
       }
@@ -592,6 +596,31 @@ function App() {
           {isPostsLoading ? (
               // 서버 응답을 기다리는 동안 로딩 문구를 표시한다.
               <p className="feed-status">게시글을 불러오는 중입니다...</p>
+          ) : !isLoggedIn ? (
+              // 비로그인 상태에서는 빈 게시판과 같은 디자인으로 로그인 안내를 표시한다.
+              <div className="feed-empty-state">
+                <div className="feed-empty-copy">
+      <span className="feed-empty-label">
+        COMMUNITY FEED · MEMBERS ONLY
+      </span>
+
+                  <h3>로그인하면 게시글을 확인할 수 있습니다.</h3>
+
+                  <p>
+                    JULens 멤버들의 투자 관점과
+                    <br />
+                    시장에 대한 이야기를 확인해보세요.
+                  </p>
+                </div>
+
+                <button
+                    className="feed-login-button"
+                    type="button"
+                    onClick={openLoginModal}
+                >
+                  LOG IN&nbsp; ↗
+                </button>
+              </div>
           ) : postsError ? (
               // 서버 연결이나 인증에 실패한 경우 오류 메시지를 표시한다.
               <p className="feed-status feed-error">{postsError}</p>
@@ -617,7 +646,20 @@ function App() {
               </div>
           ) : (
               posts.map((post) => (
-                  <article className="post-card" key={post.postId}>
+                  <article
+                      className="post-card"
+                      key={post.postId}
+                      role="link"
+                      tabIndex={0}
+                      // 선택한 게시글 번호가 포함된 상세 주소로 이동한다.
+                      onClick={() => navigate(`/posts/${post.postId}`)}
+                      onKeyDown={(event) => {
+                        // 키보드로도 게시글을 열 수 있게 한다.
+                        if (event.key === 'Enter') {
+                          navigate(`/posts/${post.postId}`)
+                        }
+                      }}
+                  >
                     <div className="post-top">
                       {/* 현재 DTO에는 게시글 분류가 없으므로 공통 태그를 표시한다. */}
                       <span className="tag">COMMUNITY</span>
