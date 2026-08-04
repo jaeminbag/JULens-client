@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { useSiteFeedback } from './components/SiteFeedback.jsx'
+import SiteHeader from './components/SiteHeader.jsx'
 import './App.css'
 
 // 게시글 작성 시각을 '12분 전', '3시간 전' 형태로 변환한다.
@@ -72,6 +73,7 @@ const isAccessTokenValid = (token) => {
 function App() {
   // React Router를 이용해 다른 주소로 이동한다.
   const navigate = useNavigate()
+  const location = useLocation()
 
   // 브라우저 기본 팝업 대신 JULens 공용 토스트를 사용한다.
   const { showToast } = useSiteFeedback()
@@ -90,7 +92,10 @@ function App() {
   const [postsError, setPostsError] = useState('')
 
   // 로그인·회원가입 모달이 열려 있는지를 관리한다.
-  const [isLoginOpen, setIsLoginOpen] = useState(false)
+  const [isLoginOpen, setIsLoginOpen] = useState(
+      // 랜딩 헤더에서 Log in을 눌러 이동했다면 모달을 바로 연다.
+      location.state?.openLogin === true,
+  )
 
   // 현재 모달이 로그인 화면인지 회원가입 화면인지 구분한다.
   const [authMode, setAuthMode] = useState('login')
@@ -397,39 +402,12 @@ function App() {
   }
   return (
       <main className="app">
-        <header className="header">
-          <button className="logo" type="button">
-            JULENS<span>.</span>
-          </button>
-
-          <nav>
-            <button className="nav-link active" type="button">
-              Community
-            </button>
-            <button className="nav-link" type="button">
-              Today&apos;s Lens
-            </button>
-          </nav>
-
-          {/* 로그인 상태에 따라 Log out 또는 Log in 버튼을 표시한다. */}
-          {isLoggedIn ? (
-              <button
-                  className="login-button"
-                  type="button"
-                  onClick={handleLogout}
-              >
-                Log out
-              </button>
-          ) : (
-              <button
-                  className="login-button"
-                  type="button"
-                  onClick={openLoginModal}
-              >
-                Log in
-              </button>
-          )}
-        </header>
+        <SiteHeader
+            activePage="community"
+            isLoggedIn={isLoggedIn}
+            onLoginClick={openLoginModal}
+            onLogoutClick={handleLogout}
+        />
 
         {/* isLoginOpen이 true일 때만 로그인 모달을 화면에 표시한다. */}
         {isLoginOpen && (

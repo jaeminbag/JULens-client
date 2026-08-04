@@ -622,7 +622,7 @@ function PostDetailPage() {
             })
 
             // 삭제된 상세 페이지가 브라우저 뒤로가기에 남지 않도록 목록으로 교체 이동한다.
-            navigate('/', { replace: true })
+            navigate('/community', { replace: true })
         } catch (requestError) {
             if (requestError instanceof TypeError) {
                 setDeleteError(
@@ -654,7 +654,7 @@ function PostDetailPage() {
                 <button
                     className="post-detail-back-button"
                     type="button"
-                    onClick={() => navigate('/')}
+                    onClick={() => navigate('/community')}
                 >
                     ← 목록으로
                 </button>
@@ -670,7 +670,7 @@ function PostDetailPage() {
                         <span>COMMUNITY SIGNAL · ERROR</span>
                         <h1>{error}</h1>
 
-                        <button type="button" onClick={() => navigate('/')}>
+                        <button type="button" onClick={() => navigate('/community')}>
                             목록으로 돌아가기
                         </button>
                     </div>

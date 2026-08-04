@@ -1,0 +1,124 @@
+.header {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: min(100%, 1168px);
+    margin: 0 auto;
+    padding: 28px 24px;
+    background: linear-gradient(
+        to bottom,
+        rgb(13 15 13 / 92%),
+        rgb(13 15 13 / 72%)
+    );
+    backdrop-filter: blur(16px);
+}
+
+.logo,
+.nav-link,
+.login-button {
+    font: inherit;
+    cursor: pointer;
+}
+
+.logo {
+    padding: 0;
+    border: 0;
+    color: #f3f5ee;
+    background: transparent;
+    font-size: 22px;
+    font-weight: 900;
+    letter-spacing: -1px;
+}
+
+.logo span {
+    color: #c8ff3d;
+}
+
+.header nav {
+    display: flex;
+    gap: 24px;
+}
+
+.nav-link {
+    position: relative;
+    padding: 7px 0;
+    border: 0;
+    color: #7f857c;
+    background: transparent;
+    font-size: 14px;
+    transition: color 160ms ease;
+}
+
+.nav-link::after {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    height: 1px;
+    background: #c8ff3d;
+    transform: scaleX(0);
+    transform-origin: center;
+    transition: transform 160ms ease;
+    content: '';
+}
+
+.nav-link.active,
+.nav-link:hover {
+    color: #f3f5ee;
+}
+
+.nav-link.active::after {
+    transform: scaleX(1);
+}
+
+.login-button {
+    padding: 10px 16px;
+    border: 1px solid #363a35;
+    border-radius: 999px;
+    color: #f3f5ee;
+    background: rgb(17 19 17 / 52%);
+    font-size: 14px;
+    transition:
+        border-color 160ms ease,
+        color 160ms ease,
+        transform 160ms ease;
+}
+
+.login-button:hover {
+    border-color: #7e9259;
+    color: #c8ff3d;
+    transform: translateY(-1px);
+}
+
+@media (max-width: 720px) {
+    .header {
+        padding-top: 20px;
+        padding-bottom: 20px;
+    }
+
+    .header nav {
+        gap: 15px;
+    }
+
+    .nav-link {
+        font-size: 12px;
+    }
+}
+
+@media (max-width: 560px) {
+    .header {
+        flex-wrap: wrap;
+        gap: 17px;
+    }
+
+    .header nav {
+        order: 3;
+        width: 100%;
+        justify-content: space-between;
+        padding-top: 14px;
+        border-top: 1px solid #282c27;
+    }
+}

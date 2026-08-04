@@ -136,7 +136,7 @@ function PostCreatePage({ mode = 'create' }) {
             return
         }
 
-        navigate('/')
+        navigate('/community')
     }
 
     // 선택한 가이드 제목을 본문에 삽입한다.
@@ -159,7 +159,7 @@ function PostCreatePage({ mode = 'create' }) {
                 message: '게시글을 작성하거나 수정하려면 로그인해주세요.',
                 type: 'error',
             })
-            navigate('/')
+            navigate('/community')
             return
         }
 
@@ -214,7 +214,7 @@ function PostCreatePage({ mode = 'create' }) {
                     message: '새 게시글이 정상적으로 등록되었습니다.',
                     type: 'success',
                 })
-                navigate('/')
+                navigate('/community')
             }
         } catch (requestError) {
             const errorMessage =
@@ -269,7 +269,7 @@ function PostCreatePage({ mode = 'create' }) {
                     <p>EDIT COMMUNITY SIGNAL · ERROR</p>
                     <h1>{loadError}</h1>
 
-                    <button type="button" onClick={() => navigate('/')}>
+                    <button type="button" onClick={() => navigate('/community')}>
                         게시글 목록으로 돌아가기
                     </button>
                 </section>

@@ -4,63 +4,10 @@
   background: #111311;
 }
 
-.header {
-  max-width: 1120px;
-  margin: 0 auto;
-  padding: 28px 24px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.logo,
-.nav-link,
-.login-button,
 .write-button,
 .tab {
   font: inherit;
   cursor: pointer;
-}
-
-.logo {
-  padding: 0;
-  border: 0;
-  color: #f3f5ee;
-  background: transparent;
-  font-size: 22px;
-  font-weight: 900;
-  letter-spacing: -1px;
-}
-
-.logo span {
-  color: #c8ff3d;
-}
-
-.header nav {
-  display: flex;
-  gap: 24px;
-}
-
-.nav-link {
-  padding: 6px 0;
-  border: 0;
-  color: #8c9089;
-  background: transparent;
-  font-size: 14px;
-}
-
-.nav-link.active,
-.nav-link:hover {
-  color: #f3f5ee;
-}
-
-.login-button {
-  padding: 10px 16px;
-  border: 1px solid #363a35;
-  border-radius: 999px;
-  color: #f3f5ee;
-  background: transparent;
-  font-size: 14px;
 }
 
 .hero-section,
