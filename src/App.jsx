@@ -78,6 +78,10 @@ function App() {
 
   const [activeTab, setActiveTab] = useState('latest')
 
+  // 최신글 탭의 정렬 방식을 관리한다.
+  // latest: 최신순, likes: 좋아요가 많은 순
+  const [latestSort, setLatestSort] = useState('latest')
+
 // 서버에서 받은 실제 게시글 목록을 관리한다.
   const [posts, setPosts] = useState([])
 
@@ -138,10 +142,12 @@ function App() {
       }
 
       // 인기글 탭은 인기글 전용 API를, 최신글 탭은 일반 목록 API를 사용한다.
+      // 인기글 탭은 좋아요 10개 이상인 게시글 전용 API를 사용한다.
+      // 최신글 탭에서는 토글값에 따라 최신순 또는 전체 좋아요순으로 조회한다.
       const requestUrl =
           activeTab === 'popular'
               ? 'http://localhost:8080/posts/popular'
-              : 'http://localhost:8080/posts'
+              : `http://localhost:8080/posts?order=${latestSort}`
 
       try {
         setIsPostsLoading(true)
@@ -186,7 +192,7 @@ function App() {
     }
 
     fetchPosts()
-  }, [activeTab, isLoggedIn])
+  }, [activeTab, isLoggedIn, latestSort])
 
   // 현재 인증 화면에 맞는 오류와 요청 상태를 계산한다.
   // 별도의 state가 아니라 기존 state에서 매 렌더링마다 계산되는 값이다.
@@ -591,21 +597,59 @@ function App() {
             </button>
           </div>
 
-          <div className="tabs">
-            <button
-                className={activeTab === 'latest' ? 'tab selected' : 'tab'}
-                type="button"
-                onClick={() => setActiveTab('latest')}
-            >
-              최신글
-            </button>
-            <button
-                className={activeTab === 'popular' ? 'tab selected' : 'tab'}
-                type="button"
-                onClick={() => setActiveTab('popular')}
-            >
-              인기글
-            </button>
+          <div className="feed-controls">
+            <div className="tabs">
+              <button
+                  className={activeTab === 'latest' ? 'tab selected' : 'tab'}
+                  type="button"
+                  onClick={() => setActiveTab('latest')}
+              >
+                최신글
+              </button>
+
+              <button
+                  className={activeTab === 'popular' ? 'tab selected' : 'tab'}
+                  type="button"
+                  onClick={() => setActiveTab('popular')}
+              >
+                인기글
+              </button>
+            </div>
+
+            {/* 최신글 탭에서만 최신순·인기순 토글을 표시한다. */}
+            {activeTab === 'latest' && (
+                <div
+                    className="feed-sort-toggle"
+                    role="group"
+                    aria-label="게시글 정렬"
+                >
+                  <button
+                      className={
+                        latestSort === 'latest'
+                            ? 'feed-sort-button selected'
+                            : 'feed-sort-button'
+                      }
+                      type="button"
+                      aria-pressed={latestSort === 'latest'}
+                      onClick={() => setLatestSort('latest')}
+                  >
+                    최신순
+                  </button>
+
+                  <button
+                      className={
+                        latestSort === 'likes'
+                            ? 'feed-sort-button selected'
+                            : 'feed-sort-button'
+                      }
+                      type="button"
+                      aria-pressed={latestSort === 'likes'}
+                      onClick={() => setLatestSort('likes')}
+                  >
+                    인기순
+                  </button>
+                </div>
+            )}
           </div>
 
           <div className="post-list">
