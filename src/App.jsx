@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useSiteFeedback } from './components/SiteFeedback.jsx'
 import './App.css'
 
 // 게시글 작성 시각을 '12분 전', '3시간 전' 형태로 변환한다.
@@ -71,6 +72,9 @@ const isAccessTokenValid = (token) => {
 function App() {
   // React Router를 이용해 다른 주소로 이동한다.
   const navigate = useNavigate()
+
+  // 브라우저 기본 팝업 대신 JULens 공용 토스트를 사용한다.
+  const { showToast } = useSiteFeedback()
 
   const [activeTab, setActiveTab] = useState('latest')
 
@@ -184,14 +188,14 @@ function App() {
     fetchPosts()
   }, [activeTab, isLoggedIn])
 
-    // 현재 인증 화면에 맞는 오류와 요청 상태를 계산한다.
+  // 현재 인증 화면에 맞는 오류와 요청 상태를 계산한다.
   // 별도의 state가 아니라 기존 state에서 매 렌더링마다 계산되는 값이다.
   const isLoginMode = authMode === 'login'
 
   const authError = isLoginMode ? loginError : signUpError
 
-  const isAuthSubmitting = isLoginMode ? isLoggingIn : isSigningUp    
- 
+  const isAuthSubmitting = isLoginMode ? isLoggingIn : isSigningUp
+
   // 헤더의 Log in 버튼을 누르면 항상 로그인 화면으로 모달을 연다.
   const openLoginModal = () => {
     setAuthMode('login')
@@ -209,8 +213,8 @@ function App() {
       localStorage.removeItem('accessToken')
       setIsLoggedIn(false)
 
-      alert('글을 작성하려면 로그인이 필요합니다.')
       openLoginModal()
+      setLoginError('글을 작성하려면 로그인이 필요합니다.')
       return
     }
 
@@ -279,18 +283,22 @@ function App() {
       setIsLoginOpen(false)
       setPassword('')
 
-      alert(`${result.data.nickname}님, 로그인되었습니다.`)
+      showToast({
+        title: '로그인 완료',
+        message: `${result.data.nickname}님, 로그인되었습니다.`,
+        type: 'success',
+      })
     } catch (error) {
       // fetch 자체가 실패했다면 서버가 꺼졌거나 연결되지 않은 경우일 가능성이 크다.
       if (error instanceof TypeError) {
         setLoginError(
-          '서버에 연결할 수 없습니다. 백엔드 서버가 실행 중인지 확인해주세요.',
+            '서버에 연결할 수 없습니다. 백엔드 서버가 실행 중인지 확인해주세요.',
         )
       } else {
         setLoginError(
-          error instanceof Error
-            ? error.message
-            : '로그인 중 알 수 없는 오류가 발생했습니다.',
+            error instanceof Error
+                ? error.message
+                : '로그인 중 알 수 없는 오류가 발생했습니다.',
         )
       }
     } finally {
@@ -314,10 +322,14 @@ function App() {
     setLoginError('')
     setSignUpError('')
 
-    alert('로그아웃되었습니다.')
+    showToast({
+      title: '로그아웃 완료',
+      message: '안전하게 로그아웃되었습니다.',
+      type: 'info',
+    })
   }
 
-    // 회원가입 폼을 제출하면 백엔드 회원가입 API를 호출한다.
+  // 회원가입 폼을 제출하면 백엔드 회원가입 API를 호출한다.
   const handleSignUp = async (event) => {
     // form 제출로 페이지가 새로고침되는 것을 막는다.
     event.preventDefault()
@@ -354,18 +366,22 @@ function App() {
       setNickname('')
       setSignUpError('')
 
-      alert('회원가입이 완료되었습니다. 방금 만든 계정으로 로그인해주세요.')
+      showToast({
+        title: '회원가입 완료',
+        message: '방금 만든 계정으로 로그인해주세요.',
+        type: 'success',
+      })
     } catch (error) {
       // fetch 요청 자체가 실패한 경우에는 서버 연결 문제로 안내한다.
       if (error instanceof TypeError) {
         setSignUpError(
-          '서버에 연결할 수 없습니다. 백엔드 서버가 실행 중인지 확인해주세요.',
+            '서버에 연결할 수 없습니다. 백엔드 서버가 실행 중인지 확인해주세요.',
         )
       } else {
         setSignUpError(
-          error instanceof Error
-            ? error.message
-            : '회원가입 중 알 수 없는 오류가 발생했습니다.',
+            error instanceof Error
+                ? error.message
+                : '회원가입 중 알 수 없는 오류가 발생했습니다.',
         )
       }
     } finally {
@@ -374,311 +390,311 @@ function App() {
     }
   }
   return (
-    <main className="app">
-      <header className="header">
-        <button className="logo" type="button">
-          JULENS<span>.</span>
-        </button>
-
-        <nav>
-          <button className="nav-link active" type="button">
-            Community
+      <main className="app">
+        <header className="header">
+          <button className="logo" type="button">
+            JULENS<span>.</span>
           </button>
-          <button className="nav-link" type="button">
-            Today&apos;s Lens
-          </button>
-        </nav>
 
-        {/* 로그인 상태에 따라 Log out 또는 Log in 버튼을 표시한다. */}
-        {isLoggedIn ? (
-            <button
-                className="login-button"
-                type="button"
-                onClick={handleLogout}
-            >
-              Log out
+          <nav>
+            <button className="nav-link active" type="button">
+              Community
             </button>
-        ) : (
-            <button
-                className="login-button"
-                type="button"
-                onClick={openLoginModal}
-            >
-              Log in
+            <button className="nav-link" type="button">
+              Today&apos;s Lens
             </button>
-        )}
-      </header>
+          </nav>
 
-      {/* isLoginOpen이 true일 때만 로그인 모달을 화면에 표시한다. */}
-      {isLoginOpen && (
-        <div
-          className="login-overlay"
-          onClick={(event) => {
-            // 모달 바깥의 어두운 영역을 눌렀을 때만 닫는다.
-            if (event.target === event.currentTarget) {
-              closeLoginModal()
-            }
-          }}
-        >
-                      <section
-              className="login-modal"
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="auth-title"
-            >
-              <div className="login-modal-header">
-                <div>
-                  <p className="login-modal-label">
-                    {isLoginMode ? 'WELCOME BACK' : 'JOIN JULENS'}
-                  </p>
-                  <h2 id="auth-title">
-                    {isLoginMode ? 'Log in' : 'Sign up'}
-                  </h2>
-                </div>
-
-                <button
-                  className="login-close-button"
+          {/* 로그인 상태에 따라 Log out 또는 Log in 버튼을 표시한다. */}
+          {isLoggedIn ? (
+              <button
+                  className="login-button"
                   type="button"
-                  aria-label="인증 창 닫기"
-                  onClick={closeLoginModal}
-                >
-                  ×
-                </button>
-              </div>
-
-              {/* 현재 화면에 따라 로그인 또는 회원가입 함수를 실행한다. */}
-              <form
-                className="login-form"
-                onSubmit={isLoginMode ? handleLogin : handleSignUp}
+                  onClick={handleLogout}
               >
-                {/* 닉네임 입력창은 회원가입 화면에서만 표시한다. */}
-                {!isLoginMode && (
-                  <label className="login-field" htmlFor="signup-nickname">
-                    <span>Nickname</span>
-                    <input
-                      id="signup-nickname"
-                      type="text"
-                      value={nickname}
-                      minLength={2}
-                      maxLength={20}
-                      autoComplete="nickname"
-                      placeholder="2~20자의 닉네임을 입력해주세요"
-                      onChange={(event) => setNickname(event.target.value)}
-                      required
-                    />
-                  </label>
-                )}
+                Log out
+              </button>
+          ) : (
+              <button
+                  className="login-button"
+                  type="button"
+                  onClick={openLoginModal}
+              >
+                Log in
+              </button>
+          )}
+        </header>
 
-                <label className="login-field" htmlFor="auth-email">
-                  <span>Email</span>
-                  <input
-                    id="auth-email"
-                    type="email"
-                    value={email}
-                    maxLength={30}
-                    autoComplete="email"
-                    placeholder="이메일을 입력해주세요"
-                    onChange={(event) => setEmail(event.target.value)}
-                    required
-                  />
-                </label>
-
-                <label className="login-field" htmlFor="auth-password">
-                  <span>Password</span>
-                  <input
-                    id="auth-password"
-                    type="password"
-                    value={password}
-                    minLength={10}
-                    maxLength={20}
-                    autoComplete={
-                      isLoginMode ? 'current-password' : 'new-password'
-                    }
-                    placeholder="10~20자의 비밀번호를 입력해주세요"
-                    onChange={(event) => setPassword(event.target.value)}
-                    required
-                  />
-                </label>
-
-                {/* 현재 화면에 해당하는 오류만 표시한다. */}
-                {authError && (
-                  <p className="login-error" role="alert">
-                    {authError}
-                  </p>
-                )}
-
-                <button
-                  className="login-submit-button"
-                  type="submit"
-                  disabled={isAuthSubmitting}
-                >
-                  {isLoginMode
-                    ? isLoggingIn
-                      ? 'Logging in...'
-                      : 'Log in'
-                    : isSigningUp
-                      ? 'Signing up...'
-                      : 'Sign up'}
-                </button>
-
-                <p className="auth-switch">
-                  <span>
-                    {isLoginMode
-                      ? '아직 계정이 없나요?'
-                      : '이미 계정이 있나요?'}
-                  </span>
+        {/* isLoginOpen이 true일 때만 로그인 모달을 화면에 표시한다. */}
+        {isLoginOpen && (
+            <div
+                className="login-overlay"
+                onClick={(event) => {
+                  // 모달 바깥의 어두운 영역을 눌렀을 때만 닫는다.
+                  if (event.target === event.currentTarget) {
+                    closeLoginModal()
+                  }
+                }}
+            >
+              <section
+                  className="login-modal"
+                  role="dialog"
+                  aria-modal="true"
+                  aria-labelledby="auth-title"
+              >
+                <div className="login-modal-header">
+                  <div>
+                    <p className="login-modal-label">
+                      {isLoginMode ? 'WELCOME BACK' : 'JOIN JULENS'}
+                    </p>
+                    <h2 id="auth-title">
+                      {isLoginMode ? 'Log in' : 'Sign up'}
+                    </h2>
+                  </div>
 
                   <button
-                    className="auth-switch-button"
-                    type="button"
-                    disabled={isAuthSubmitting}
-                    onClick={() =>
-                      changeAuthMode(isLoginMode ? 'signup' : 'login')
-                    }
+                      className="login-close-button"
+                      type="button"
+                      aria-label="인증 창 닫기"
+                      onClick={closeLoginModal}
                   >
-                    {isLoginMode ? 'Sign up' : 'Log in'}
+                    ×
                   </button>
-                </p>
-              </form>
-            </section>
-        </div>
-      )}
+                </div>
 
-      <section className="hero-section">
-        <p className="eyebrow">MARKET COMMUNITY</p>
-        <h1>
-          Noise out.
-          <br />
-          <em>Signal in.</em>
-        </h1>
-        <p className="hero-description">
-          시장의 움직임을 함께 읽고,
-          <br />
-          더 나은 투자 관점을 쌓아가는 커뮤니티.
-        </p>
-      </section>
+                {/* 현재 화면에 따라 로그인 또는 회원가입 함수를 실행한다. */}
+                <form
+                    className="login-form"
+                    onSubmit={isLoginMode ? handleLogin : handleSignUp}
+                >
+                  {/* 닉네임 입력창은 회원가입 화면에서만 표시한다. */}
+                  {!isLoginMode && (
+                      <label className="login-field" htmlFor="signup-nickname">
+                        <span>Nickname</span>
+                        <input
+                            id="signup-nickname"
+                            type="text"
+                            value={nickname}
+                            minLength={2}
+                            maxLength={20}
+                            autoComplete="nickname"
+                            placeholder="2~20자의 닉네임을 입력해주세요"
+                            onChange={(event) => setNickname(event.target.value)}
+                            required
+                        />
+                      </label>
+                  )}
 
-      <section className="feed-section">
-        <div className="feed-header">
-          <div>
-            <p className="section-label">COMMUNITY FEED</p>
-            <h2>게시글</h2>
+                  <label className="login-field" htmlFor="auth-email">
+                    <span>Email</span>
+                    <input
+                        id="auth-email"
+                        type="email"
+                        value={email}
+                        maxLength={30}
+                        autoComplete="email"
+                        placeholder="이메일을 입력해주세요"
+                        onChange={(event) => setEmail(event.target.value)}
+                        required
+                    />
+                  </label>
+
+                  <label className="login-field" htmlFor="auth-password">
+                    <span>Password</span>
+                    <input
+                        id="auth-password"
+                        type="password"
+                        value={password}
+                        minLength={10}
+                        maxLength={20}
+                        autoComplete={
+                          isLoginMode ? 'current-password' : 'new-password'
+                        }
+                        placeholder="10~20자의 비밀번호를 입력해주세요"
+                        onChange={(event) => setPassword(event.target.value)}
+                        required
+                    />
+                  </label>
+
+                  {/* 현재 화면에 해당하는 오류만 표시한다. */}
+                  {authError && (
+                      <p className="login-error" role="alert">
+                        {authError}
+                      </p>
+                  )}
+
+                  <button
+                      className="login-submit-button"
+                      type="submit"
+                      disabled={isAuthSubmitting}
+                  >
+                    {isLoginMode
+                        ? isLoggingIn
+                            ? 'Logging in...'
+                            : 'Log in'
+                        : isSigningUp
+                            ? 'Signing up...'
+                            : 'Sign up'}
+                  </button>
+
+                  <p className="auth-switch">
+                  <span>
+                    {isLoginMode
+                        ? '아직 계정이 없나요?'
+                        : '이미 계정이 있나요?'}
+                  </span>
+
+                    <button
+                        className="auth-switch-button"
+                        type="button"
+                        disabled={isAuthSubmitting}
+                        onClick={() =>
+                            changeAuthMode(isLoginMode ? 'signup' : 'login')
+                        }
+                    >
+                      {isLoginMode ? 'Sign up' : 'Log in'}
+                    </button>
+                  </p>
+                </form>
+              </section>
+            </div>
+        )}
+
+        <section className="hero-section">
+          <p className="eyebrow">MARKET COMMUNITY</p>
+          <h1>
+            Noise out.
+            <br />
+            <em>Signal in.</em>
+          </h1>
+          <p className="hero-description">
+            시장의 움직임을 함께 읽고,
+            <br />
+            더 나은 투자 관점을 쌓아가는 커뮤니티.
+          </p>
+        </section>
+
+        <section className="feed-section">
+          <div className="feed-header">
+            <div>
+              <p className="section-label">COMMUNITY FEED</p>
+              <h2>게시글</h2>
+            </div>
+
+            {/* 클릭하면 로그인 여부를 검사한 뒤 글쓰기를 진행한다. */}
+            <button
+                className="write-button"
+                type="button"
+                onClick={handleWriteClick}
+            >
+              + 글쓰기
+            </button>
           </div>
 
-          {/* 클릭하면 로그인 여부를 검사한 뒤 글쓰기를 진행한다. */}
-          <button
-              className="write-button"
-              type="button"
-              onClick={handleWriteClick}
-          >
-            + 글쓰기
-          </button>
-        </div>
+          <div className="tabs">
+            <button
+                className={activeTab === 'latest' ? 'tab selected' : 'tab'}
+                type="button"
+                onClick={() => setActiveTab('latest')}
+            >
+              최신글
+            </button>
+            <button
+                className={activeTab === 'popular' ? 'tab selected' : 'tab'}
+                type="button"
+                onClick={() => setActiveTab('popular')}
+            >
+              인기글
+            </button>
+          </div>
 
-        <div className="tabs">
-          <button
-            className={activeTab === 'latest' ? 'tab selected' : 'tab'}
-            type="button"
-            onClick={() => setActiveTab('latest')}
-          >
-            최신글
-          </button>
-          <button
-            className={activeTab === 'popular' ? 'tab selected' : 'tab'}
-            type="button"
-            onClick={() => setActiveTab('popular')}
-          >
-            인기글
-          </button>
-        </div>
-
-        <div className="post-list">
-          {isPostsLoading ? (
-              // 서버 응답을 기다리는 동안 로딩 문구를 표시한다.
-              <p className="feed-status">게시글을 불러오는 중입니다...</p>
-          ) : !isLoggedIn ? (
-              // 비로그인 상태에서는 빈 게시판과 같은 디자인으로 로그인 안내를 표시한다.
-              <div className="feed-empty-state">
-                <div className="feed-empty-copy">
+          <div className="post-list">
+            {isPostsLoading ? (
+                // 서버 응답을 기다리는 동안 로딩 문구를 표시한다.
+                <p className="feed-status">게시글을 불러오는 중입니다...</p>
+            ) : !isLoggedIn ? (
+                // 비로그인 상태에서는 빈 게시판과 같은 디자인으로 로그인 안내를 표시한다.
+                <div className="feed-empty-state">
+                  <div className="feed-empty-copy">
       <span className="feed-empty-label">
         COMMUNITY FEED · MEMBERS ONLY
       </span>
 
-                  <h3>로그인하면 게시글을 확인할 수 있습니다.</h3>
+                    <h3>로그인하면 게시글을 확인할 수 있습니다.</h3>
 
-                  <p>
-                    JULens 멤버들의 투자 관점과
-                    <br />
-                    시장에 대한 이야기를 확인해보세요.
-                  </p>
+                    <p>
+                      JULens 멤버들의 투자 관점과
+                      <br />
+                      시장에 대한 이야기를 확인해보세요.
+                    </p>
+                  </div>
+
+                  <button
+                      className="feed-login-button"
+                      type="button"
+                      onClick={openLoginModal}
+                  >
+                    LOG IN&nbsp; ↗
+                  </button>
                 </div>
-
-                <button
-                    className="feed-login-button"
-                    type="button"
-                    onClick={openLoginModal}
-                >
-                  LOG IN&nbsp; ↗
-                </button>
-              </div>
-          ) : postsError ? (
-              // 서버 연결이나 인증에 실패한 경우 오류 메시지를 표시한다.
-              <p className="feed-status feed-error">{postsError}</p>
-          ) : posts.length === 0 ? (
-              // 요청에는 성공했지만 등록된 게시글이 없는 경우다.
-              <div className="feed-empty-state">
-                <div className="feed-empty-copy">
+            ) : postsError ? (
+                // 서버 연결이나 인증에 실패한 경우 오류 메시지를 표시한다.
+                <p className="feed-status feed-error">{postsError}</p>
+            ) : posts.length === 0 ? (
+                // 요청에는 성공했지만 등록된 게시글이 없는 경우다.
+                <div className="feed-empty-state">
+                  <div className="feed-empty-copy">
       <span className="feed-empty-label">
         COMMUNITY FEED · NO SIGNAL
       </span>
 
-                  <h3>아직 등록된 게시글이 없습니다.</h3>
+                    <h3>아직 등록된 게시글이 없습니다.</h3>
 
-                  <p>
-                    새로운 관점과 시장에 대한 생각을
-                    가장 먼저 공유해보세요.
-                  </p>
-                </div>
+                    <p>
+                      새로운 관점과 시장에 대한 생각을
+                      가장 먼저 공유해보세요.
+                    </p>
+                  </div>
 
-                <span className="feed-empty-status">
+                  <span className="feed-empty-status">
       WAITING FOR FIRST POST
     </span>
-              </div>
-          ) : (
-              posts.map((post) => (
-                  <article
-                      className="post-card"
-                      key={post.postId}
-                      role="link"
-                      tabIndex={0}
-                      // 선택한 게시글 번호가 포함된 상세 주소로 이동한다.
-                      onClick={() => navigate(`/posts/${post.postId}`)}
-                      onKeyDown={(event) => {
-                        // 키보드로도 게시글을 열 수 있게 한다.
-                        if (event.key === 'Enter') {
-                          navigate(`/posts/${post.postId}`)
-                        }
-                      }}
-                  >
-                    <div className="post-top">
-                      {/* 현재 DTO에는 게시글 분류가 없으므로 공통 태그를 표시한다. */}
-                      <span className="tag">COMMUNITY</span>
+                </div>
+            ) : (
+                posts.map((post) => (
+                    <article
+                        className="post-card"
+                        key={post.postId}
+                        role="link"
+                        tabIndex={0}
+                        // 선택한 게시글 번호가 포함된 상세 주소로 이동한다.
+                        onClick={() => navigate(`/posts/${post.postId}`)}
+                        onKeyDown={(event) => {
+                          // 키보드로도 게시글을 열 수 있게 한다.
+                          if (event.key === 'Enter') {
+                            navigate(`/posts/${post.postId}`)
+                          }
+                        }}
+                    >
+                      <div className="post-top">
+                        {/* 현재 DTO에는 게시글 분류가 없으므로 공통 태그를 표시한다. */}
+                        <span className="tag">COMMUNITY</span>
 
-                      <span className="time">
+                        <span className="time">
             {formatCreatedAt(post.createdAt)}
           </span>
-                    </div>
+                      </div>
 
-                    <h3>{post.title}</h3>
-                    <p>{post.contentPreview}</p>
+                      <h3>{post.title}</h3>
+                      <p>{post.contentPreview}</p>
 
-                    <div className="post-bottom">
-                      <span>@{post.authorNickname}</span>
+                      <div className="post-bottom">
+                        <span>@{post.authorNickname}</span>
 
-                      <div className="post-stats">
-                        {/* 목록 API에서 받은 좋아요 수와 댓글 수를 표시한다. */}
-                        <span>♡ {post.likeCount ?? 0}</span>
-                        <span>
+                        <div className="post-stats">
+                          {/* 목록 API에서 받은 좋아요 수와 댓글 수를 표시한다. */}
+                          <span>♡ {post.likeCount ?? 0}</span>
+                          <span>
                           <svg
                               className="post-comment-icon"
                               viewBox="0 0 24 24"
@@ -687,16 +703,16 @@ function App() {
     <path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z" />
   </svg>
 
-                          {post.commentCount ?? 0}
+                            {post.commentCount ?? 0}
 </span>
+                        </div>
                       </div>
-                    </div>
-                  </article>
-              ))
-          )}
-        </div>
-      </section>
-    </main>
+                    </article>
+                ))
+            )}
+          </div>
+        </section>
+      </main>
   )
 }
 

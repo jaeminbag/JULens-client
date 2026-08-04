@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { useSiteFeedback } from '../components/SiteFeedback.jsx'
 import { getLoggedInUserId } from '../utils/auth.js'
 import './PostCreatePage.css'
 
@@ -10,6 +11,9 @@ const writingPrompts = ['판단 근거', '리스크 요인', '다음 관찰 포�
 function PostCreatePage({ mode = 'create' }) {
     const navigate = useNavigate()
     const { postId } = useParams()
+
+    // 등록·수정 결과를 브라우저 팝업 대신 사이트 내부 토스트로 표시한다.
+    const { showToast } = useSiteFeedback()
 
     // 라우터에서 전달받은 mode가 edit이면 게시글 수정 화면으로 사용한다.
     const isEditMode = mode === 'edit'
@@ -150,7 +154,11 @@ function PostCreatePage({ mode = 'create' }) {
         const accessToken = localStorage.getItem('accessToken')
 
         if (!accessToken) {
-            alert('로그인이 필요합니다.')
+            showToast({
+                title: '로그인 필요',
+                message: '게시글을 작성하거나 수정하려면 로그인해주세요.',
+                type: 'error',
+            })
             navigate('/')
             return
         }
@@ -192,26 +200,36 @@ function PostCreatePage({ mode = 'create' }) {
             }
 
             if (isEditMode) {
-                alert('게시글이 수정되었습니다.')
+                showToast({
+                    title: '수정 완료',
+                    message: '게시글이 정상적으로 수정되었습니다.',
+                    type: 'success',
+                })
 
                 // 수정 결과를 바로 확인할 수 있도록 해당 상세 페이지로 이동한다.
                 navigate(`/posts/${postId}`)
             } else {
-                alert('게시글이 등록되었습니다.')
+                showToast({
+                    title: '등록 완료',
+                    message: '새 게시글이 정상적으로 등록되었습니다.',
+                    type: 'success',
+                })
                 navigate('/')
             }
         } catch (requestError) {
-            if (requestError instanceof TypeError) {
-                alert(
-                    '서버에 연결할 수 없습니다. 백엔드 서버를 확인해주세요.',
-                )
-            } else {
-                alert(
-                    requestError instanceof Error
+            const errorMessage =
+                requestError instanceof TypeError
+                    ? '서버에 연결할 수 없습니다. 백엔드 서버를 확인해주세요.'
+                    : requestError instanceof Error
                         ? requestError.message
-                        : '게시글 처리 중 오류가 발생했습니다.',
-                )
-            }
+                        : '게시글 처리 중 오류가 발생했습니다.'
+
+            showToast({
+                title: isEditMode ? '수정 실패' : '등록 실패',
+                message: errorMessage,
+                type: 'error',
+                duration: 4500,
+            })
         } finally {
             setIsSubmitting(false)
         }
@@ -502,10 +520,10 @@ function PostCreatePage({ mode = 'create' }) {
                                          ? '수정 완료'
                                          : '게시글 등록'}
 
-                             <small>
+                                 <small>
                             {isSubmitting
-                             ? 'CONNECTING TO SERVER'
-                            : `${completedFieldCount} / 2 COMPLETE`}
+                                ? 'CONNECTING TO SERVER'
+                                : `${completedFieldCount} / 2 COMPLETE`}
                             </small>
                             </span>
 

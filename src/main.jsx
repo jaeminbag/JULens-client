@@ -1,31 +1,36 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
-import PostDetailPage from './pages/PostDetailPage.jsx'
-import './index.css'
 import App from './App.jsx'
 import PostCreatePage from './pages/PostCreatePage.jsx'
+import PostDetailPage from './pages/PostDetailPage.jsx'
+import { SiteFeedbackProvider } from './components/SiteFeedback.jsx'
+import './index.css'
 
 createRoot(document.getElementById('root')).render(
     <StrictMode>
-        {/* 현재 주소에 맞는 페이지를 표시한다. */}
         <BrowserRouter>
-            <Routes>
-                {/* 메인 게시글 목록 페이지 */}
-                <Route path="/" element={<App />} />
+            {/* useSiteFeedback을 사용하는 모든 페이지의 바깥을 감싼다. */}
+            <SiteFeedbackProvider>
+                <Routes>
+                    <Route path="/" element={<App />} />
 
-                {/* 게시글 작성 전용 페이지 */}
-                <Route path="/posts/new" element={<PostCreatePage />} />
+                    <Route
+                        path="/posts/new"
+                        element={<PostCreatePage />}
+                    />
 
-                {/* 기존 게시글을 수정하는 에디터 페이지다. */}
-                <Route
-                    path="/posts/:postId/edit"
-                    element={<PostCreatePage mode="edit" />}
-                />
+                    <Route
+                        path="/posts/:postId/edit"
+                        element={<PostCreatePage mode="edit" />}
+                    />
 
-                {/* 게시글 번호에 해당하는 단건 상세 페이지 */}
-                <Route path="/posts/:postId" element={<PostDetailPage />} />
-            </Routes>
+                    <Route
+                        path="/posts/:postId"
+                        element={<PostDetailPage />}
+                    />
+                </Routes>
+            </SiteFeedbackProvider>
         </BrowserRouter>
     </StrictMode>,
 )

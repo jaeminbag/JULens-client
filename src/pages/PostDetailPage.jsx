@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { useSiteFeedback } from '../components/SiteFeedback.jsx'
 import { getLoggedInUserId } from '../utils/auth.js'
 import './PostDetailPage.css'
 
@@ -25,6 +26,9 @@ function PostDetailPage() {
     // /posts/:postId 주소에서 실제 게시글 번호를 가져온다.
     const { postId } = useParams()
     const navigate = useNavigate()
+
+    // 삭제 확인과 처리 결과를 JULens 공용 피드백 UI로 표시한다.
+    const { showConfirm, showToast } = useSiteFeedback()
 
     // 서버에서 조회한 게시글과 요청 상태를 관리한다.
     const [post, setPost] = useState(null)
@@ -339,10 +343,14 @@ function PostDetailPage() {
             return
         }
 
-        // 실수로 누른 경우를 막기 위해 삭제 전 한 번 더 확인한다.
-        const shouldDelete = window.confirm(
-            '게시글을 삭제하시겠습니까?\n삭제한 게시글은 복구할 수 없습니다.',
-        )
+        // 삭제는 되돌릴 수 없으므로 사이트 내부 확인 모달에서 한 번 더 묻는다.
+        const shouldDelete = await showConfirm({
+            title: '게시글을 삭제하시겠습니까?',
+            message: '삭제한 게시글과 댓글은 복구할 수 없습니다.',
+            confirmText: '삭제하기',
+            cancelText: '취소',
+            tone: 'danger',
+        })
 
         if (!shouldDelete) {
             return
@@ -371,7 +379,11 @@ function PostDetailPage() {
                 )
             }
 
-            alert('게시글이 삭제되었습니다.')
+            showToast({
+                title: '삭제 완료',
+                message: '게시글이 정상적으로 삭제되었습니다.',
+                type: 'success',
+            })
 
             // 삭제된 상세 페이지가 브라우저 뒤로가기에 남지 않도록 목록으로 교체 이동한다.
             navigate('/', { replace: true })
