@@ -202,22 +202,155 @@
     cursor: pointer;
 }
 
+/* 댓글 작성자와 작성 시각을 묶어서 표시한다. */
+.post-detail-comment-meta {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-width: 0;
+}
+
+/* 작성자에게만 표시되는 댓글 수정·삭제 버튼이다. */
+.post-detail-comment-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.post-detail-comment-actions button {
+    padding: 6px 10px;
+    border: 1px solid #414741;
+    border-radius: 999px;
+    color: #aeb3ab;
+    background: transparent;
+    font: inherit;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.post-detail-comment-actions button:hover:not(:disabled) {
+    border-color: #c8ff3d;
+    color: #e9ede4;
+}
+
+.post-detail-comment-actions button.delete:hover:not(:disabled) {
+    border-color: #ff7979;
+    color: #ff9292;
+}
+
+.post-detail-comment-actions button:disabled {
+    cursor: not-allowed;
+    opacity: 0.45;
+}
+
+/* 수정 버튼을 누르면 기존 댓글 자리에서 바로 편집한다. */
+.post-detail-comment-edit-form {
+    margin-top: 16px;
+    padding: 15px;
+    border: 1px solid #4a5148;
+    border-radius: 14px;
+    background: #141714;
+}
+
+.post-detail-comment-edit-form textarea {
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 90px;
+    padding: 0;
+    border: 0;
+    outline: 0;
+    resize: vertical;
+    color: #e1e4dd;
+    background: transparent;
+    font: inherit;
+    font-size: 15px;
+    line-height: 1.7;
+}
+
+.post-detail-comment-edit-bottom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-top: 12px;
+}
+
+.post-detail-comment-edit-bottom > span {
+    color: #777c75;
+    font-size: 12px;
+}
+
+.post-detail-comment-edit-bottom > div {
+    display: flex;
+    gap: 8px;
+}
+
+.post-detail-comment-edit-bottom button {
+    min-width: 68px;
+    padding: 8px 13px;
+    border-radius: 999px;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.post-detail-comment-edit-bottom button.cancel {
+    border: 1px solid #414741;
+    color: #b8bdb5;
+    background: transparent;
+}
+
+.post-detail-comment-edit-bottom button.save {
+    border: 1px solid #c8ff3d;
+    color: #111311;
+    background: #c8ff3d;
+}
+
+.post-detail-comment-edit-bottom button:disabled {
+    cursor: not-allowed;
+    opacity: 0.45;
+}
+
+/* 특정 댓글의 수정·삭제 요청에 실패했을 때 표시한다. */
+.post-detail-comment > .post-detail-comment-action-error {
+    margin: 12px 0 0;
+    color: #ff7979;
+    font-size: 13px;
+}
+
+
 @media (max-width: 640px) {
-    .post-detail-container {
-        padding-top: 48px;
+    .post-detail-comments {
+        margin-top: 52px;
     }
 
-    .post-detail-top {
+    .post-detail-comment-top {
+        align-items: flex-start;
         flex-direction: column;
-        gap: 10px;
+        gap: 6px;
     }
 
-    .post-detail-article h1 {
-        margin-top: 34px;
+    .post-detail-comment-meta {
+        width: 100%;
+        justify-content: space-between;
     }
 
-    .post-detail-content {
-        font-size: 16px;
+    .post-detail-comment-actions {
+        align-self: flex-end;
+    }
+
+    .post-detail-comment-edit-bottom {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .post-detail-comment-edit-bottom > div {
+        align-self: stretch;
+    }
+
+    .post-detail-comment-edit-bottom button {
+        flex: 1;
     }
 }
 

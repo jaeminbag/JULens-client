@@ -60,6 +60,18 @@ function PostDetailPage() {
     const [isCommentSubmitting, setIsCommentSubmitting] = useState(false)
     const [commentError, setCommentError] = useState('')
 
+    // 수정 중인 댓글과 수정 입력 내용을 관리한다.
+    const [editingCommentId, setEditingCommentId] = useState(null)
+    const [editingCommentContent, setEditingCommentContent] = useState('')
+
+// 댓글 수정·삭제 요청 상태와 댓글별 오류 메시지를 관리한다.
+    const [updatingCommentId, setUpdatingCommentId] = useState(null)
+    const [deletingCommentId, setDeletingCommentId] = useState(null)
+    const [commentActionError, setCommentActionError] = useState({
+        commentId: null,
+        message: '',
+    })
+
     useEffect(() => {
         const fetchPost = async () => {
             const accessToken = localStorage.getItem('accessToken')
@@ -329,6 +341,230 @@ function PostDetailPage() {
         }
     }
 
+    // 선택한 댓글의 기존 내용을 입력창에 넣고 수정 모드로 전환한다.
+    const startCommentEdit = (comment) => {
+        const isCommentAuthor =
+            loggedInUserId !== null &&
+            Number(comment.userId) === loggedInUserId
+
+        // 작성자가 아닌 사용자는 수정 모드에 들어갈 수 없다.
+        if (!isCommentAuthor) {
+            return
+        }
+
+        setEditingCommentId(comment.commentId)
+        setEditingCommentContent(comment.content)
+        setCommentActionError({
+            commentId: null,
+            message: '',
+        })
+    }
+
+// 수정 내용을 저장하지 않고 기존 댓글 표시로 돌아간다.
+    const cancelCommentEdit = () => {
+        setEditingCommentId(null)
+        setEditingCommentContent('')
+        setCommentActionError({
+            commentId: null,
+            message: '',
+        })
+    }
+
+// 수정한 댓글을 서버에 저장하고 해당 댓글만 새 응답으로 교체한다.
+    const handleCommentUpdate = async (event, commentId) => {
+        event.preventDefault()
+
+        const accessToken = localStorage.getItem('accessToken')
+        const trimmedContent = editingCommentContent.trim()
+
+        // 다른 댓글을 수정 중이거나 이미 수정 요청 중이면 실행하지 않는다.
+        if (
+            editingCommentId !== commentId ||
+            updatingCommentId !== null
+        ) {
+            return
+        }
+
+        if (!accessToken) {
+            setCommentActionError({
+                commentId,
+                message: '댓글을 수정하려면 로그인이 필요합니다.',
+            })
+            return
+        }
+
+        if (!trimmedContent) {
+            setCommentActionError({
+                commentId,
+                message: '댓글 내용을 입력해주세요.',
+            })
+            return
+        }
+
+        if (trimmedContent.length > 500) {
+            setCommentActionError({
+                commentId,
+                message: '댓글은 최대 500자까지 작성할 수 있습니다.',
+            })
+            return
+        }
+
+        try {
+            setUpdatingCommentId(commentId)
+            setCommentActionError({
+                commentId: null,
+                message: '',
+            })
+
+            const response = await fetch(
+                `http://localhost:8080/comments/${commentId}`,
+                {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${accessToken}`,
+                    },
+
+                    // CommentUpdateRequest의 content 필드에 맞춰 전송한다.
+                    body: JSON.stringify({
+                        content: trimmedContent,
+                    }),
+                },
+            )
+
+            const result = await response.json()
+
+            if (!response.ok || !result.success) {
+                throw new Error(
+                    result.message || '댓글 수정에 실패했습니다.',
+                )
+            }
+
+            // 수정된 댓글만 서버 응답으로 교체한다.
+            setComments((currentComments) =>
+                currentComments.map((comment) =>
+                    comment.commentId === commentId
+                        ? result.data
+                        : comment,
+                ),
+            )
+
+            setEditingCommentId(null)
+            setEditingCommentContent('')
+
+            showToast({
+                title: '수정 완료',
+                message: '댓글이 정상적으로 수정되었습니다.',
+                type: 'success',
+            })
+        } catch (requestError) {
+            setCommentActionError({
+                commentId,
+                message:
+                    requestError instanceof TypeError
+                        ? '서버에 연결할 수 없습니다. 백엔드 서버를 확인해주세요.'
+                        : requestError instanceof Error
+                            ? requestError.message
+                            : '댓글 수정 중 오류가 발생했습니다.',
+            })
+        } finally {
+            setUpdatingCommentId(null)
+        }
+    }
+
+// 선택한 댓글을 삭제하고 화면 목록에서도 제거한다.
+    const handleCommentDelete = async (comment) => {
+        const commentId = comment.commentId
+        const accessToken = localStorage.getItem('accessToken')
+
+        const isCommentAuthor =
+            loggedInUserId !== null &&
+            Number(comment.userId) === loggedInUserId
+
+        // 작성자가 아니거나 다른 요청이 진행 중이면 실행하지 않는다.
+        if (
+            !isCommentAuthor ||
+            updatingCommentId !== null ||
+            deletingCommentId !== null
+        ) {
+            return
+        }
+
+        if (!accessToken) {
+            setCommentActionError({
+                commentId,
+                message: '댓글을 삭제하려면 로그인이 필요합니다.',
+            })
+            return
+        }
+
+        // 기존 JULens 확인 모달을 이용해 삭제 여부를 확인한다.
+        const shouldDelete = await showConfirm({
+            title: '댓글을 삭제하시겠습니까?',
+            message: '삭제한 댓글은 복구할 수 없습니다.',
+            confirmText: '삭제하기',
+            cancelText: '취소',
+            tone: 'danger',
+        })
+
+        if (!shouldDelete) {
+            return
+        }
+
+        try {
+            setDeletingCommentId(commentId)
+            setCommentActionError({
+                commentId: null,
+                message: '',
+            })
+
+            const response = await fetch(
+                `http://localhost:8080/comments/${commentId}`,
+                {
+                    method: 'DELETE',
+                    headers: {
+                        Authorization: `Bearer ${accessToken}`,
+                    },
+                },
+            )
+
+            // 서버는 ApiResponse<Void> 형식으로 반환한다.
+            const result = await response.json()
+
+            if (!response.ok || !result.success) {
+                throw new Error(
+                    result.message || '댓글 삭제에 실패했습니다.',
+                )
+            }
+
+            // 삭제된 댓글만 화면 목록에서 제거한다.
+            setComments((currentComments) =>
+                currentComments.filter(
+                    (currentComment) =>
+                        currentComment.commentId !== commentId,
+                ),
+            )
+
+            showToast({
+                title: '삭제 완료',
+                message: '댓글이 정상적으로 삭제되었습니다.',
+                type: 'success',
+            })
+        } catch (requestError) {
+            setCommentActionError({
+                commentId,
+                message:
+                    requestError instanceof TypeError
+                        ? '서버에 연결할 수 없습니다. 백엔드 서버를 확인해주세요.'
+                        : requestError instanceof Error
+                            ? requestError.message
+                            : '댓글 삭제 중 오류가 발생했습니다.',
+            })
+        } finally {
+            setDeletingCommentId(null)
+        }
+    }
+
     // 현재 로그인 사용자가 작성한 게시글을 삭제한다.
     const handlePostDelete = async () => {
         const accessToken = localStorage.getItem('accessToken')
@@ -566,22 +802,142 @@ function PostDetailPage() {
                                         아직 작성된 댓글이 없습니다.
                                     </p>
                                 ) : (
-                                    comments.map((comment) => (
-                                        <article
-                                            className="post-detail-comment"
-                                            key={comment.commentId}
-                                        >
-                                            <div className="post-detail-comment-top">
-                                                <strong>@{comment.nickname}</strong>
-                                                <span>
-                            {formatPostDate(comment.createdAt)}
-                        </span>
-                                            </div>
+                                    comments.map((comment) => {
+                                        // 로그인 사용자와 댓글 작성자가 같을 때만 버튼을 표시한다.
+                                        const isCommentAuthor =
+                                            loggedInUserId !== null &&
+                                            Number(comment.userId) === loggedInUserId
 
-                                            {/* 댓글의 줄바꿈을 유지해 표시한다. */}
-                                            <p>{comment.content}</p>
-                                        </article>
-                                    ))
+                                        const isEditing =
+                                            editingCommentId === comment.commentId
+
+                                        const isUpdating =
+                                            updatingCommentId === comment.commentId
+
+                                        const isCommentDeleting =
+                                            deletingCommentId === comment.commentId
+
+                                        const actionError =
+                                            commentActionError.commentId === comment.commentId
+                                                ? commentActionError.message
+                                                : ''
+
+                                        return (
+                                            <article
+                                                className="post-detail-comment"
+                                                key={comment.commentId}
+                                            >
+                                                <div className="post-detail-comment-top">
+                                                    <div className="post-detail-comment-meta">
+                                                        <strong>@{comment.nickname}</strong>
+
+                                                        <span>
+                        {formatPostDate(comment.createdAt)}
+                    </span>
+                                                    </div>
+
+                                                    {/* 내가 작성한 댓글에만 수정·삭제 버튼을 표시한다. */}
+                                                    {isCommentAuthor && !isEditing && (
+                                                        <div className="post-detail-comment-actions">
+                                                            <button
+                                                                type="button"
+                                                                disabled={
+                                                                    editingCommentId !== null ||
+                                                                    updatingCommentId !== null ||
+                                                                    deletingCommentId !== null
+                                                                }
+                                                                onClick={() =>
+                                                                    startCommentEdit(comment)
+                                                                }
+                                                            >
+                                                                수정
+                                                            </button>
+
+                                                            <button
+                                                                className="delete"
+                                                                type="button"
+                                                                disabled={
+                                                                    editingCommentId !== null ||
+                                                                    updatingCommentId !== null ||
+                                                                    deletingCommentId !== null
+                                                                }
+                                                                onClick={() =>
+                                                                    handleCommentDelete(comment)
+                                                                }
+                                                            >
+                                                                {isCommentDeleting
+                                                                    ? '삭제 중...'
+                                                                    : '삭제'}
+                                                            </button>
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                {isEditing ? (
+                                                    <form
+                                                        className="post-detail-comment-edit-form"
+                                                        onSubmit={(event) =>
+                                                            handleCommentUpdate(
+                                                                event,
+                                                                comment.commentId,
+                                                            )
+                                                        }
+                                                    >
+                    <textarea
+                        value={editingCommentContent}
+                        maxLength={500}
+                        aria-label="수정할 댓글 내용"
+                        disabled={isUpdating}
+                        onChange={(event) =>
+                            setEditingCommentContent(
+                                event.target.value,
+                            )
+                        }
+                    />
+
+                                                        <div className="post-detail-comment-edit-bottom">
+                        <span>
+                            {editingCommentContent.length} / 500
+                        </span>
+
+                                                            <div>
+                                                                <button
+                                                                    className="cancel"
+                                                                    type="button"
+                                                                    disabled={isUpdating}
+                                                                    onClick={cancelCommentEdit}
+                                                                >
+                                                                    취소
+                                                                </button>
+
+                                                                <button
+                                                                    className="save"
+                                                                    type="submit"
+                                                                    disabled={
+                                                                        isUpdating ||
+                                                                        !editingCommentContent.trim()
+                                                                    }
+                                                                >
+                                                                    {isUpdating
+                                                                        ? '저장 중...'
+                                                                        : '저장'}
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    </form>
+                                                ) : (
+                                                    // 수정 중이 아닐 때는 기존 댓글 내용을 표시한다.
+                                                    <p>{comment.content}</p>
+                                                )}
+
+                                                {actionError && (
+                                                    <p className="post-detail-comment-action-error">
+                                                        {actionError}
+                                                    </p>
+                                                )}
+                                            </article>
+                                        )
+                                    })
                                 )}
                             </div>
                         </section>
