@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { getLatestLensAnalyses } from '../api/lens.js'
+import { getLatestLensAnalyses, getStockPriceHistories } from '../api/lens.js'
 import AsyncState from '../components/AsyncState.jsx'
 import LensTabs from '../components/LensTabs.jsx'
 import Pagination from '../components/Pagination.jsx'
 import SiteHeader from '../components/SiteHeader.jsx'
+import PriceLineChart from '../components/PriceLineChart.jsx'
 import { useSiteFeedback } from '../components/SiteFeedback.jsx'
 import { hasValidAccessToken } from '../utils/auth.js'
+import { formatLensLabel, formatMarketSession } from '../utils/lensLabels.js'
 import './TodayLensPage.css'
 
 const PAGE_SIZE = 9
@@ -25,6 +27,7 @@ export default function TodayLensPage() {
     const { showToast } = useSiteFeedback()
     const [loggedIn, setLoggedIn] = useState(hasValidAccessToken)
     const [result, setResult] = useState({ content: [], totalPages: 0, totalElements: 0 })
+    const [priceHistories, setPriceHistories] = useState({})
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState('')
     const [query, setQuery] = useState('')
@@ -46,8 +49,21 @@ export default function TodayLensPage() {
             direction,
             page: page - 1,
             size: PAGE_SIZE,
-        }).then((data) => {
-            if (active) setResult(data ?? { content: [], totalPages: 0, totalElements: 0 })
+        }).then(async (data) => {
+            if (!active) return
+            const nextResult = data ?? { content: [], totalPages: 0, totalElements: 0 }
+            setResult(nextResult)
+            const tickers = (nextResult.content ?? []).map((item) => item.ticker)
+            if (tickers.length === 0) {
+                setPriceHistories({})
+                return
+            }
+            try {
+                const histories = await getStockPriceHistories(tickers)
+                if (active) setPriceHistories(Object.fromEntries((histories ?? []).map((history) => [history.ticker, history.points ?? []])))
+            } catch {
+                if (active) setPriceHistories({})
+            }
         }).catch((requestError) => {
             if (active) setError(requestError.message)
         }).finally(() => {
@@ -96,8 +112,9 @@ export default function TodayLensPage() {
             {!loading && !error && <div className="stock-grid">{items.map((item) => <article className="stock-card" key={item.analysisId} onClick={() => navigate(`/stocks/${item.ticker}`)}>
                 <div className="stock-card-top"><span>{item.ticker}</span><strong>{number(item.totalScore)}</strong></div>
                 <h2>{item.companyNameKr || item.companyName}</h2><p>{item.companyName}</p>
+                <PriceLineChart points={priceHistories[item.ticker]} compact />
                 <div className="stock-metrics"><span>현재가 <b>{money(item.currentPrice)}</b></span><span>등락률 <b className={number(item.changeRate) >= 0 ? 'up' : 'down'}>{number(item.changeRate) >= 0 ? '+' : ''}{number(item.changeRate).toFixed(2)}%</b></span><span>거래량 <b>{number(item.volume).toLocaleString()}</b></span></div>
-                <small>{item.exchange} · {item.marketSession} · {item.label}</small>
+                <small>{item.exchange} · {formatMarketSession(item.marketSession)} · {formatLensLabel(item.label)}</small>
             </article>)}</div>}
             {!loading && !error && items.length > 0 && <Pagination page={Math.min(page, totalPages)} totalPages={totalPages} onChange={changePage} />}
         </section>

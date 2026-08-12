@@ -5,6 +5,7 @@ import AsyncState from '../components/AsyncState.jsx'
 import LensTabs from '../components/LensTabs.jsx'
 import SiteHeader from '../components/SiteHeader.jsx'
 import { hasValidAccessToken } from '../utils/auth.js'
+import { formatLensLabel, formatMarketSession } from '../utils/lensLabels.js'
 import './TodayLensPage.css'
 
 const value = (number, suffix = '') => number == null
@@ -51,7 +52,7 @@ export default function WatchlistPage() {
                     const stock = item.stock
                     const analysis = item.latestAnalysis
                     return <button key={item.userStockId} onClick={() => navigate(`/stocks/${stock.ticker}`)}>
-                        <div><b>{stock.ticker}</b><strong>{stock.companyNameKr || stock.companyName}</strong><span>{analysis ? `${analysis.label} · ${analysis.marketSession}` : '아직 최신 분석이 없습니다.'}</span></div>
+                        <div><b>{stock.ticker}</b><strong>{stock.companyNameKr || stock.companyName}</strong><span>{analysis ? `${formatLensLabel(analysis.label)} · ${formatMarketSession(analysis.marketSession)}` : '아직 최신 분석이 없습니다.'}</span></div>
                         <dl><div><dt>현재가</dt><dd>${value(analysis?.currentPrice)}</dd></div><div><dt>등락률</dt><dd className={Number(analysis?.changeRate) >= 0 ? 'up' : 'down'}>{analysis && Number(analysis.changeRate) >= 0 ? '+' : ''}{value(analysis?.changeRate, '%')}</dd></div><div><dt>종합점수</dt><dd>{value(analysis?.totalScore)}</dd></div></dl><i>→</i>
                     </button>
                 })}</div>}

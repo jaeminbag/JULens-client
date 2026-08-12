@@ -408,6 +408,40 @@
   opacity: 0.55;
 }
 
+/* 인증 전환 문구와 버튼을 분리해 한 문장처럼 자연스럽게 정렬한다. */
+.auth-switch {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin: 2px 0 0;
+  color: #92988f;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.auth-switch-button {
+  padding: 2px 0;
+  color: #c8ff3d;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid rgb(200 255 61 / 45%);
+  font: inherit;
+  font-weight: 750;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+}
+
+.auth-switch-button:hover:not(:disabled) {
+  color: #ddff88;
+  border-bottom-color: #ddff88;
+}
+
+.auth-switch-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
 @media (max-width: 520px) {
   .login-modal {
     padding: 24px;
