@@ -7,6 +7,7 @@ import PriceLineChart from '../components/PriceLineChart.jsx'
 import { useSiteFeedback } from '../components/SiteFeedback.jsx'
 import { hasValidAccessToken } from '../utils/auth.js'
 import { formatLensLabel, formatMarketSession } from '../utils/lensLabels.js'
+import { getStockDisplayNames } from '../utils/stockNames.js'
 import './TodayLensPage.css'
 
 const value = (number, suffix = '') => number == null
@@ -57,6 +58,7 @@ export default function StockDetailPage() {
     }, [loggedIn])
 
     const stock = detail?.stock
+    const { primaryName, secondaryName } = getStockDisplayNames(stock)
     const analysis = detail?.latestAnalysis
     const news = detail?.news ?? []
     const watched = stock ? watchedStockIds.includes(stock.id) : false
@@ -95,7 +97,7 @@ export default function StockDetailPage() {
             <button className="back" onClick={() => navigate(-1)}>← 목록으로</button>
             <AsyncState loading={loading} error={error} onRetry={retry} />
             {stock && !loading && !error && <>
-                <header className="stock-detail-header"><div><span>{stock.ticker} · {stock.exchange}</span><h1>{stock.companyNameKr || stock.companyName}</h1><p>{stock.companyName}</p></div><button className={watched ? 'watch-button active' : 'watch-button'} disabled={savingWatchlist} onClick={toggleWatchlist}>{savingWatchlist ? '처리 중...' : watched ? '★ 관심 종목 해제' : '☆ 관심 종목 추가'}</button></header>
+                <header className="stock-detail-header"><div><span>{stock.ticker} · {stock.exchange}</span><h1>{primaryName}</h1>{secondaryName && <p>{secondaryName}</p>}</div><button className={watched ? 'watch-button active' : 'watch-button'} disabled={savingWatchlist} onClick={toggleWatchlist}>{savingWatchlist ? '처리 중...' : watched ? '★ 관심 종목 해제' : '☆ 관심 종목 추가'}</button></header>
                 <div className="detail-metrics"><article><span>현재가</span><b>${value(analysis?.currentPrice)}</b></article><article><span>등락률</span><b className={Number(analysis?.changeRate) >= 0 ? 'up' : 'down'}>{analysis && Number(analysis.changeRate) >= 0 ? '+' : ''}{value(analysis?.changeRate, '%')}</b></article><article><span>종합점수</span><b>{value(analysis?.totalScore)}</b></article><article><span>거래량</span><b>{value(analysis?.volume)}</b></article></div>
                 <PriceLineChart points={detail.priceHistory} />
                 <article className="analysis-panel"><span>LATEST LENS ANALYSIS</span><h2>{analysis ? `${formatLensLabel(analysis.label)} · ${formatMarketSession(analysis.marketSession)}` : '최신 분석 없음'}</h2>{analysis ? <><div className="score-breakdown"><b>뉴스 {analysis.newsScore}</b><b>주가 {analysis.movementScore}</b><b>거래량 {analysis.volumeScore}</b><b>위험 {analysis.riskScore}</b></div><p>분석 시각 {formatDate(analysis.analyzedAt)}</p></> : <p>아직 완료된 분석 배치에 포함되지 않은 종목입니다.</p>}</article>
