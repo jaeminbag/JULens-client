@@ -6,6 +6,9 @@ import PostCreatePage from './pages/PostCreatePage.jsx'
 import PostDetailPage from './pages/PostDetailPage.jsx'
 import LandingPage from './pages/LandingPage.jsx'
 import TodayLensPage from './pages/TodayLensPage.jsx'
+import StockNewsPage from './pages/StockNewsPage.jsx'
+import WatchlistPage from './pages/WatchlistPage.jsx'
+import StockDetailPage from './pages/StockDetailPage.jsx'
 import { SiteFeedbackProvider } from './components/SiteFeedback.jsx'
 import './index.css'
 
@@ -21,8 +24,11 @@ createRoot(document.getElementById('root')).render(
                     {/* 기존 게시글 목록 기능은 Community 주소에서 그대로 사용한다. */}
                     <Route path="/community" element={<App />} />
 
-                    {/* 분석 기능이 완성되기 전까지 제품 방향을 보여주는 준비 화면이다. */}
+                    {/* Lens 분석, 뉴스, 관심 종목과 상세 화면 라우트를 제공한다. */}
                     <Route path="/today-lens" element={<TodayLensPage />} />
+                    <Route path="/stock-news" element={<StockNewsPage />} />
+                    <Route path="/watchlist" element={<WatchlistPage />} />
+                    <Route path="/stocks/:ticker" element={<StockDetailPage />} />
 
                     <Route
                         path="/posts/new"
