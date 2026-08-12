@@ -41,3 +41,7 @@ export const deleteUserStock = (stockId) => apiRequest(
 export const getStockDetail = (ticker) => apiRequest(
     `/stocks/${encodeURIComponent(ticker)}/detail`,
 )
+
+export const getStockPriceHistories = (tickers) => apiRequest(
+    `/stocks/price-history?${buildQuery({ tickers: tickers.join(',') })}`,
+)

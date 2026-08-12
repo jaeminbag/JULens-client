@@ -13,7 +13,7 @@ const lensPreviewStocks = [
         company: 'NVIDIA',
         changeRate: '+4.82%',
         score: 92,
-        signal: 'STRONG',
+        signal: '강한 신호',
     },
     {
         rank: '02',
@@ -21,7 +21,7 @@ const lensPreviewStocks = [
         company: 'Micron Technology',
         changeRate: '+3.14%',
         score: 86,
-        signal: 'WATCH',
+        signal: '관심 종목',
     },
     {
         rank: '03',
@@ -29,7 +29,7 @@ const lensPreviewStocks = [
         company: 'Palantir',
         changeRate: '+2.41%',
         score: 79,
-        signal: 'WATCH',
+        signal: '관심 종목',
     },
 ]
 
