@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getLatestLensAnalyses } from '../api/lens.js'
 import AsyncState from '../components/AsyncState.jsx'
@@ -12,12 +12,19 @@ import './TodayLensPage.css'
 const PAGE_SIZE = 9
 const number = (value) => Number(value ?? 0)
 const money = (value) => value == null ? '—' : `$${number(value).toLocaleString('en-US', { maximumFractionDigits: 2 })}`
+const SORT_OPTIONS = {
+    score: ['TOTAL_SCORE', 'DESC'],
+    name: ['COMPANY_NAME', 'ASC'],
+    volume: ['VOLUME', 'DESC'],
+    priceAsc: ['CURRENT_PRICE', 'ASC'],
+    priceDesc: ['CURRENT_PRICE', 'DESC'],
+}
 
 export default function TodayLensPage() {
     const navigate = useNavigate()
     const { showToast } = useSiteFeedback()
     const [loggedIn, setLoggedIn] = useState(hasValidAccessToken)
-    const [items, setItems] = useState([])
+    const [result, setResult] = useState({ content: [], totalPages: 0, totalElements: 0 })
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState('')
     const [query, setQuery] = useState('')
@@ -29,48 +36,70 @@ export default function TodayLensPage() {
 
     useEffect(() => {
         let active = true
-        getLatestLensAnalyses().then((data) => active && setItems(data)).catch((e) => active && setError(e.message)).finally(() => active && setLoading(false))
-        return () => { active = false }
-    }, [reload])
+        const [sortBy, direction] = SORT_OPTIONS[sort]
 
-    const filtered = useMemo(() => {
-        const keyword = query.trim().toLowerCase()
-        return items.filter((item) => {
-            const text = `${item.companyNameKo || ''} ${item.companyNameEn || ''} ${item.ticker || ''}`.toLowerCase()
-            const price = number(item.currentPrice)
-            return (!keyword || text.includes(keyword)) && (!minPrice || price >= number(minPrice)) && (!maxPrice || price <= number(maxPrice))
-        }).sort((a, b) => {
-            if (sort === 'name') return (a.companyNameKo || a.companyNameEn || a.ticker).localeCompare(b.companyNameKo || b.companyNameEn || b.ticker, 'ko')
-            if (sort === 'volume') return number(b.volume) - number(a.volume)
-            if (sort === 'priceAsc') return number(a.currentPrice) - number(b.currentPrice)
-            if (sort === 'priceDesc') return number(b.currentPrice) - number(a.currentPrice)
-            return number(b.overallScore) - number(a.overallScore)
+        getLatestLensAnalyses({
+            keyword: query.trim(),
+            minPrice,
+            maxPrice,
+            sortBy,
+            direction,
+            page: page - 1,
+            size: PAGE_SIZE,
+        }).then((data) => {
+            if (active) setResult(data ?? { content: [], totalPages: 0, totalElements: 0 })
+        }).catch((requestError) => {
+            if (active) setError(requestError.message)
+        }).finally(() => {
+            if (active) setLoading(false)
         })
-    }, [items, query, sort, minPrice, maxPrice])
-    const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
-    const visible = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
-    const updateFilter = (setter) => (event) => { setter(event.target.value); setPage(1) }
-    const logout = () => { localStorage.removeItem('accessToken'); setLoggedIn(false); showToast({ title: '로그아웃 완료', message: '안전하게 로그아웃되었습니다.', type: 'info' }) }
+
+        return () => { active = false }
+    }, [query, sort, minPrice, maxPrice, page, reload])
+
+    const items = result.content ?? []
+    const totalPages = Math.max(1, result.totalPages ?? 0)
+    const updateFilter = (setter) => (event) => {
+        setLoading(true)
+        setError('')
+        setter(event.target.value)
+        setPage(1)
+    }
+    const changePage = (nextPage) => {
+        setLoading(true)
+        setError('')
+        setPage(nextPage)
+    }
+    const retry = () => {
+        setLoading(true)
+        setError('')
+        setReload((value) => value + 1)
+    }
+    const logout = () => {
+        localStorage.removeItem('accessToken')
+        setLoggedIn(false)
+        showToast({ title: '로그아웃 완료', message: '안전하게 로그아웃되었습니다.', type: 'info' })
+    }
 
     return <main className="today-lens-page">
         <SiteHeader activePage="today-lens" isLoggedIn={loggedIn} onLoginClick={() => navigate('/community', { state: { openLogin: true } })} onLogoutClick={logout} />
         <section className="lens-shell">
             <LensTabs />
-            <header className="lens-title"><div><p>DAILY MARKET INTELLIGENCE</p><h1>Today&apos;s <em>Lens.</em></h1></div><span>최신 완료 분석 배치 · 종합점수 기준</span></header>
+            <header className="lens-title"><div><p>DAILY MARKET INTELLIGENCE</p><h1>Today&apos;s <em>Lens.</em></h1></div><span>최신 완료 분석 · 총 {result.totalElements ?? 0}개 종목</span></header>
             <div className="lens-controls">
                 <label className="search-field"><span>SEARCH</span><input value={query} onChange={updateFilter(setQuery)} placeholder="회사명 또는 티커 검색" /></label>
                 <label><span>SORT BY</span><select value={sort} onChange={updateFilter(setSort)}><option value="score">종합점수순</option><option value="name">이름순</option><option value="volume">거래량순</option><option value="priceAsc">낮은 가격순</option><option value="priceDesc">높은 가격순</option></select></label>
                 <label><span>MIN PRICE</span><input type="number" min="0" value={minPrice} onChange={updateFilter(setMinPrice)} placeholder="$ 0" /></label>
                 <label><span>MAX PRICE</span><input type="number" min="0" value={maxPrice} onChange={updateFilter(setMaxPrice)} placeholder="$ ∞" /></label>
             </div>
-            <AsyncState loading={loading} error={error} empty={!loading && !error && visible.length === 0} onRetry={() => { setLoading(true); setError(''); setReload((v) => v + 1) }} />
-            {!loading && !error && <div className="stock-grid">{visible.map((item) => <article className="stock-card" key={item.ticker} onClick={() => navigate(`/stocks/${item.ticker}`)}>
-                <div className="stock-card-top"><span>{item.ticker}</span><strong>{number(item.overallScore).toFixed(1)}</strong></div>
-                <h2>{item.companyNameKo || item.companyNameEn}</h2><p>{item.companyNameEn}</p>
-                <div className="stock-metrics"><span>현재가 <b>{money(item.currentPrice)}</b></span><span>거래량 <b>{number(item.volume).toLocaleString()}</b></span></div>
-                {item.analysisSummary && <small>{item.analysisSummary}</small>}
+            <AsyncState loading={loading} error={error} empty={!loading && !error && items.length === 0} onRetry={retry} />
+            {!loading && !error && <div className="stock-grid">{items.map((item) => <article className="stock-card" key={item.analysisId} onClick={() => navigate(`/stocks/${item.ticker}`)}>
+                <div className="stock-card-top"><span>{item.ticker}</span><strong>{number(item.totalScore)}</strong></div>
+                <h2>{item.companyNameKr || item.companyName}</h2><p>{item.companyName}</p>
+                <div className="stock-metrics"><span>현재가 <b>{money(item.currentPrice)}</b></span><span>등락률 <b className={number(item.changeRate) >= 0 ? 'up' : 'down'}>{number(item.changeRate) >= 0 ? '+' : ''}{number(item.changeRate).toFixed(2)}%</b></span><span>거래량 <b>{number(item.volume).toLocaleString()}</b></span></div>
+                <small>{item.exchange} · {item.marketSession} · {item.label}</small>
             </article>)}</div>}
-            <Pagination page={Math.min(page, totalPages)} totalPages={totalPages} onChange={setPage} />
+            {!loading && !error && items.length > 0 && <Pagination page={Math.min(page, totalPages)} totalPages={totalPages} onChange={changePage} />}
         </section>
     </main>
 }
