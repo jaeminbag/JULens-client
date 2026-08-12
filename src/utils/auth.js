@@ -34,3 +34,16 @@ export const getLoggedInUserId = () => {
         return null
     }
 }
+
+export const hasValidAccessToken = () => {
+    const accessToken = localStorage.getItem('accessToken')
+    if (!accessToken) return false
+    try {
+        const payloadPart = accessToken.split('.')[1]
+        const normalized = payloadPart.replace(/-/g, '+').replace(/_/g, '/')
+        const payload = JSON.parse(atob(normalized.padEnd(Math.ceil(normalized.length / 4) * 4, '=')))
+        return typeof payload.exp === 'number' && Date.now() < payload.exp * 1000
+    } catch {
+        return false
+    }
+}
