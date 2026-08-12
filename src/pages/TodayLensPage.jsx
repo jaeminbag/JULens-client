@@ -9,6 +9,7 @@ import PriceLineChart from '../components/PriceLineChart.jsx'
 import { useSiteFeedback } from '../components/SiteFeedback.jsx'
 import { hasValidAccessToken } from '../utils/auth.js'
 import { formatLensLabel, formatMarketSession } from '../utils/lensLabels.js'
+import { getStockDisplayNames } from '../utils/stockNames.js'
 import './TodayLensPage.css'
 
 const PAGE_SIZE = 9
@@ -109,13 +110,16 @@ export default function TodayLensPage() {
                 <label><span>MAX PRICE</span><input type="number" min="0" value={maxPrice} onChange={updateFilter(setMaxPrice)} placeholder="$ ∞" /></label>
             </div>
             <AsyncState loading={loading} error={error} empty={!loading && !error && items.length === 0} onRetry={retry} />
-            {!loading && !error && <div className="stock-grid">{items.map((item) => <article className="stock-card" key={item.analysisId} onClick={() => navigate(`/stocks/${item.ticker}`)}>
-                <div className="stock-card-top"><span>{item.ticker}</span><strong>{number(item.totalScore)}</strong></div>
-                <h2>{item.companyNameKr || item.companyName}</h2><p>{item.companyName}</p>
-                <PriceLineChart points={priceHistories[item.ticker]} compact />
-                <div className="stock-metrics"><span>현재가 <b>{money(item.currentPrice)}</b></span><span>등락률 <b className={number(item.changeRate) >= 0 ? 'up' : 'down'}>{number(item.changeRate) >= 0 ? '+' : ''}{number(item.changeRate).toFixed(2)}%</b></span><span>거래량 <b>{number(item.volume).toLocaleString()}</b></span></div>
-                <small>{item.exchange} · {formatMarketSession(item.marketSession)} · {formatLensLabel(item.label)}</small>
-            </article>)}</div>}
+            {!loading && !error && <div className="stock-grid">{items.map((item) => {
+                const { primaryName, secondaryName } = getStockDisplayNames(item)
+                return <article className="stock-card" key={item.analysisId} onClick={() => navigate(`/stocks/${item.ticker}`)}>
+                    <div className="stock-card-top"><span>{item.ticker}</span><strong>{number(item.totalScore)}</strong></div>
+                    <h2>{primaryName}</h2>{secondaryName && <p>{secondaryName}</p>}
+                    <PriceLineChart points={priceHistories[item.ticker]} compact />
+                    <div className="stock-metrics"><span>현재가 <b>{money(item.currentPrice)}</b></span><span>등락률 <b className={number(item.changeRate) >= 0 ? 'up' : 'down'}>{number(item.changeRate) >= 0 ? '+' : ''}{number(item.changeRate).toFixed(2)}%</b></span><span>거래량 <b>{number(item.volume).toLocaleString()}</b></span></div>
+                    <small>{item.exchange} · {formatMarketSession(item.marketSession)} · {formatLensLabel(item.label)}</small>
+                </article>
+            })}</div>}
             {!loading && !error && items.length > 0 && <Pagination page={Math.min(page, totalPages)} totalPages={totalPages} onChange={changePage} />}
         </section>
     </main>
