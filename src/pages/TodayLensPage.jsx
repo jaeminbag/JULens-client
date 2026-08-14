@@ -7,16 +7,17 @@ import Pagination from '../components/Pagination.jsx'
 import SiteHeader from '../components/SiteHeader.jsx'
 import PriceLineChart from '../components/PriceLineChart.jsx'
 import RealtimeFeedBadge from '../components/RealtimeFeedBadge.jsx'
+import DualPrice from '../components/DualPrice.jsx'
 import { useSiteFeedback } from '../components/SiteFeedback.jsx'
 import { hasValidAccessToken } from '../utils/auth.js'
 import { formatLensLabel, formatMarketSession } from '../utils/lensLabels.js'
 import { getStockDisplayNames } from '../utils/stockNames.js'
 import { mergeRealtimePoints, useRealtimePrices } from '../hooks/useRealtimePrices.js'
+import { useUsdKrwRate } from '../hooks/useUsdKrwRate.js'
 import './TodayLensPage.css'
 
 const PAGE_SIZE = 9
 const number = (value) => Number(value ?? 0)
-const money = (value) => value == null ? '—' : `$${number(value).toLocaleString('en-US', { maximumFractionDigits: 2 })}`
 const SORT_OPTIONS = {
     score: ['TOTAL_SCORE', 'DESC'],
     name: ['COMPANY_NAME', 'ASC'],
@@ -39,8 +40,10 @@ export default function TodayLensPage() {
     const [maxPrice, setMaxPrice] = useState('')
     const [page, setPage] = useState(1)
     const [reload, setReload] = useState(0)
+    const exchangeRate = useUsdKrwRate()
 
     const visibleTickers = (result.content ?? []).map((item) => item.ticker)
+    const visibleTickerKey = [...visibleTickers].sort().join(',')
     const { prices: realtimePrices, points: realtimePoints } = useRealtimePrices(visibleTickers)
 
     useEffect(() => {
@@ -55,21 +58,10 @@ export default function TodayLensPage() {
             direction,
             page: page - 1,
             size: PAGE_SIZE,
-        }).then(async (data) => {
+        }).then((data) => {
             if (!active) return
             const nextResult = data ?? { content: [], totalPages: 0, totalElements: 0 }
             setResult(nextResult)
-            const tickers = (nextResult.content ?? []).map((item) => item.ticker)
-            if (tickers.length === 0) {
-                setPriceHistories({})
-                return
-            }
-            try {
-                const histories = await getStockPriceHistories(tickers)
-                if (active) setPriceHistories(Object.fromEntries((histories ?? []).map((history) => [history.ticker, history.points ?? []])))
-            } catch {
-                if (active) setPriceHistories({})
-            }
         }).catch((requestError) => {
             if (active) setError(requestError.message)
         }).finally(() => {
@@ -78,6 +70,30 @@ export default function TodayLensPage() {
 
         return () => { active = false }
     }, [query, sort, minPrice, maxPrice, page, reload])
+
+    useEffect(() => {
+        let active = true
+        let timer
+        const tickers = visibleTickerKey ? visibleTickerKey.split(',') : []
+        if (tickers.length === 0) return undefined
+
+        const loadHistories = async () => {
+            try {
+                const histories = await getStockPriceHistories(tickers, 'REALTIME')
+                if (active) setPriceHistories(Object.fromEntries(
+                    (histories ?? []).map((history) => [history.ticker, history]),
+                ))
+            } catch {
+                if (active) setPriceHistories({})
+            }
+        }
+        loadHistories()
+        timer = window.setInterval(loadHistories, 60_000)
+        return () => {
+            active = false
+            window.clearInterval(timer)
+        }
+    }, [visibleTickerKey])
 
     const items = result.content ?? []
     const totalPages = Math.max(1, result.totalPages ?? 0)
@@ -118,11 +134,12 @@ export default function TodayLensPage() {
             {!loading && !error && <div className="stock-grid">{items.map((item) => {
                 const { primaryName, secondaryName } = getStockDisplayNames(item)
                 const realtimePrice = realtimePrices[item.ticker]
+                const history = priceHistories[item.ticker]
                 return <article className="stock-card" key={item.analysisId} onClick={() => navigate(`/stocks/${item.ticker}`)}>
                     <div className="stock-card-top"><span>{item.ticker}</span><strong>{number(item.totalScore)}</strong></div>
                     <h2>{primaryName}</h2>{secondaryName && <p>{secondaryName}</p>}
-                    <PriceLineChart points={mergeRealtimePoints(priceHistories[item.ticker], realtimePoints[item.ticker])} compact feed={realtimePrice?.feed} />
-                    <div className="stock-metrics"><span>현재가 <b>{money(realtimePrice?.price ?? item.currentPrice)}</b><RealtimeFeedBadge feed={realtimePrice?.feed} /></span><span>등락률 <b className={number(item.changeRate) >= 0 ? 'up' : 'down'}>{number(item.changeRate) >= 0 ? '+' : ''}{number(item.changeRate).toFixed(2)}%</b></span><span>거래량 <b>{number(item.volume).toLocaleString()}</b></span></div>
+                    <PriceLineChart points={mergeRealtimePoints(history?.points, realtimePoints[item.ticker], history?.windowStart)} compact feed={realtimePrice?.feed} />
+                    <div className="stock-metrics"><span>현재가 <DualPrice value={realtimePrice?.price ?? item.currentPrice} exchangeRate={exchangeRate} /><RealtimeFeedBadge feed={realtimePrice?.feed} /></span><span>등락률 <b className={number(item.changeRate) >= 0 ? 'up' : 'down'}>{number(item.changeRate) >= 0 ? '+' : ''}{number(item.changeRate).toFixed(2)}%</b></span><span>거래량 <b>{number(item.volume).toLocaleString()}</b></span></div>
                     <small>{item.exchange} · {formatMarketSession(item.marketSession)} · {formatLensLabel(item.label)}</small>
                 </article>
             })}</div>}
