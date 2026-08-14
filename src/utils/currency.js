@@ -9,9 +9,9 @@ export const formatUsd = (value) => value == null || !Number.isFinite(Number(val
 export const formatKrw = (usdValue, usdKrwRate) => {
     const converted = Number(usdValue) * Number(usdKrwRate)
     if (!Number.isFinite(converted)) return ''
-    return `약 ${new Intl.NumberFormat('ko-KR', {
+    return new Intl.NumberFormat('ko-KR', {
         style: 'currency',
         currency: 'KRW',
         maximumFractionDigits: 0,
-    }).format(converted)}`
+    }).format(converted)
 }

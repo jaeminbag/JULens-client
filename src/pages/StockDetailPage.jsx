@@ -96,16 +96,24 @@ export default function StockDetailPage() {
     const analysis = detail?.latestAnalysis
     const news = detail?.news ?? []
     const watched = stock ? watchedStockIds.includes(stock.id) : false
-    const currentPrice = realtimePrices[stock?.ticker]?.price ?? analysis?.currentPrice
-    const basePoints = priceHistory?.points
+    const selectedHistory = priceHistory?.period === pricePeriod
+        ? priceHistory
+        : null
+    const basePoints = selectedHistory?.points
         ?? (pricePeriod === 'REALTIME' ? detail?.priceHistory : [])
     const chartPoints = pricePeriod === 'REALTIME'
         ? mergeRealtimePoints(
             basePoints,
             realtimePoints[stock?.ticker],
-            priceHistory?.windowStart,
+            selectedHistory?.windowStart,
         )
         : basePoints
+    const latestRealtimeHistory = pricePeriod === 'REALTIME'
+        ? selectedHistory?.points ?? detail?.priceHistory
+        : detail?.priceHistory
+    const currentPrice = realtimePrices[stock?.ticker]?.price
+        ?? latestRealtimeHistory?.at(-1)?.price
+        ?? analysis?.currentPrice
     const retry = () => {
         setLoading(true)
         setError('')
@@ -149,9 +157,10 @@ export default function StockDetailPage() {
                     exchangeRate={exchangeRate}
                     period={pricePeriod}
                     onPeriodChange={setPricePeriod}
-                    windowStart={priceHistory?.windowStart}
-                    windowEnd={priceHistory?.windowEnd}
+                    windowStart={selectedHistory?.windowStart}
+                    windowEnd={selectedHistory?.windowEnd}
                     loading={chartLoading}
+                    currentPrice={currentPrice}
                 />
                 <article className="analysis-panel"><span>LATEST LENS ANALYSIS</span><h2>{analysis ? `${formatLensLabel(analysis.label)} · ${formatMarketSession(analysis.marketSession)}` : '최신 분석 없음'}</h2>{analysis ? <><div className="score-breakdown"><b>뉴스 {analysis.newsScore}</b><b>주가 {analysis.movementScore}</b><b>거래량 {analysis.volumeScore}</b><b>위험 {analysis.riskScore}</b></div><p>분석 시각 {formatDate(analysis.analyzedAt)}</p></> : <p>아직 완료된 분석 배치에 포함되지 않은 종목입니다.</p>}</article>
                 <section className="detail-news"><div><span>RELATED NEWS</span><h2>관련 최신 뉴스</h2></div>{news.length === 0 ? <p>저장된 관련 뉴스가 없습니다.</p> : <div className="news-list">{news.map((item) => <article key={item.newsId} onClick={() => item.url && window.open(item.url, '_blank', 'noopener,noreferrer')}><div><span>{item.source}</span><time>{formatDate(item.publishedAt)}</time></div><h2>{item.title}</h2><p>{item.summary}</p><footer><i>원문 보기 ↗</i></footer></article>)}</div>}</section>

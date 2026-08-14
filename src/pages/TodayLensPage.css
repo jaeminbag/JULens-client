@@ -29,14 +29,51 @@
 .dual-price strong {
     color: #e8ebe4;
     font-size: inherit;
+    font-variant-numeric: tabular-nums;
 }
 
 .dual-price small {
     color: #899086;
     font-size: 10px;
     font-weight: 600;
+    font-variant-numeric: tabular-nums;
     white-space: nowrap;
 }
+
+/* 실시간 가격이 갱신될 때 새 숫자가 아래에서 짧게 굴러 들어온다. */
+.price-number-viewport {
+    display: block;
+    overflow: hidden;
+    line-height: 1.2;
+}
+
+.price-number-tick {
+    display: block;
+    animation: price-tick-up .32s cubic-bezier(.2,.75,.3,1);
+}
+
+/* 상위 카드의 범용 span 규칙이 가격 숫자의 크기와 여백을 덮지 않게 한다. */
+.detail-metrics .dual-price .price-number-tick,
+.stock-metrics .dual-price .price-number-tick {
+    display: block;
+    margin: 0;
+    color: inherit;
+    font-size: inherit;
+}
+
+@keyframes price-tick-up {
+    from {
+        opacity: .15;
+        transform: translateY(65%);
+        filter: brightness(1.8);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+        filter: brightness(1);
+    }
+}
+
 
 .detail-metrics .dual-price strong {
     font-size: 24px;
@@ -106,6 +143,12 @@
 
 .chart-current-price .dual-price small {
     align-self: flex-end;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .price-number-tick {
+        animation: none;
+    }
 }
 
 .price-period-tabs {
