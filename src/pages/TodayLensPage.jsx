@@ -10,6 +10,7 @@ import { useSiteFeedback } from '../components/SiteFeedback.jsx'
 import { hasValidAccessToken } from '../utils/auth.js'
 import { formatLensLabel, formatMarketSession } from '../utils/lensLabels.js'
 import { getStockDisplayNames } from '../utils/stockNames.js'
+import { mergeRealtimePoints, useRealtimePrices } from '../hooks/useRealtimePrices.js'
 import './TodayLensPage.css'
 
 const PAGE_SIZE = 9
@@ -37,6 +38,9 @@ export default function TodayLensPage() {
     const [maxPrice, setMaxPrice] = useState('')
     const [page, setPage] = useState(1)
     const [reload, setReload] = useState(0)
+
+    const visibleTickers = (result.content ?? []).map((item) => item.ticker)
+    const { prices: realtimePrices, points: realtimePoints } = useRealtimePrices(visibleTickers)
 
     useEffect(() => {
         let active = true
@@ -112,11 +116,12 @@ export default function TodayLensPage() {
             <AsyncState loading={loading} error={error} empty={!loading && !error && items.length === 0} onRetry={retry} />
             {!loading && !error && <div className="stock-grid">{items.map((item) => {
                 const { primaryName, secondaryName } = getStockDisplayNames(item)
+                const realtimePrice = realtimePrices[item.ticker]
                 return <article className="stock-card" key={item.analysisId} onClick={() => navigate(`/stocks/${item.ticker}`)}>
                     <div className="stock-card-top"><span>{item.ticker}</span><strong>{number(item.totalScore)}</strong></div>
                     <h2>{primaryName}</h2>{secondaryName && <p>{secondaryName}</p>}
-                    <PriceLineChart points={priceHistories[item.ticker]} compact />
-                    <div className="stock-metrics"><span>현재가 <b>{money(item.currentPrice)}</b></span><span>등락률 <b className={number(item.changeRate) >= 0 ? 'up' : 'down'}>{number(item.changeRate) >= 0 ? '+' : ''}{number(item.changeRate).toFixed(2)}%</b></span><span>거래량 <b>{number(item.volume).toLocaleString()}</b></span></div>
+                    <PriceLineChart points={mergeRealtimePoints(priceHistories[item.ticker], realtimePoints[item.ticker])} compact realtime={Boolean(realtimePrice)} />
+                    <div className="stock-metrics"><span>현재가 <b>{money(realtimePrice?.price ?? item.currentPrice)}</b>{realtimePrice && <i className="realtime-badge">IEX 실시간</i>}</span><span>등락률 <b className={number(item.changeRate) >= 0 ? 'up' : 'down'}>{number(item.changeRate) >= 0 ? '+' : ''}{number(item.changeRate).toFixed(2)}%</b></span><span>거래량 <b>{number(item.volume).toLocaleString()}</b></span></div>
                     <small>{item.exchange} · {formatMarketSession(item.marketSession)} · {formatLensLabel(item.label)}</small>
                 </article>
             })}</div>}
