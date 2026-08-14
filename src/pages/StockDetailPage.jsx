@@ -4,6 +4,7 @@ import { addUserStock, deleteUserStock, getStockDetail, getUserStocks } from '..
 import AsyncState from '../components/AsyncState.jsx'
 import SiteHeader from '../components/SiteHeader.jsx'
 import PriceLineChart from '../components/PriceLineChart.jsx'
+import RealtimeFeedBadge from '../components/RealtimeFeedBadge.jsx'
 import { useSiteFeedback } from '../components/SiteFeedback.jsx'
 import { hasValidAccessToken } from '../utils/auth.js'
 import { formatLensLabel, formatMarketSession } from '../utils/lensLabels.js'
@@ -100,8 +101,8 @@ export default function StockDetailPage() {
             <AsyncState loading={loading} error={error} onRetry={retry} />
             {stock && !loading && !error && <>
                 <header className="stock-detail-header"><div><span>{stock.ticker} · {stock.exchange}</span><h1>{primaryName}</h1>{secondaryName && <p>{secondaryName}</p>}</div><button className={watched ? 'watch-button active' : 'watch-button'} disabled={savingWatchlist} onClick={toggleWatchlist}>{savingWatchlist ? '처리 중...' : watched ? '★ 관심 종목 해제' : '☆ 관심 종목 추가'}</button></header>
-                <div className="detail-metrics"><article><span>현재가</span><b>${value(realtimePrices[stock.ticker]?.price ?? analysis?.currentPrice)}</b>{realtimePrices[stock.ticker] && <i className="realtime-badge">IEX 실시간</i>}</article><article><span>등락률</span><b className={Number(analysis?.changeRate) >= 0 ? 'up' : 'down'}>{analysis && Number(analysis.changeRate) >= 0 ? '+' : ''}{value(analysis?.changeRate, '%')}</b></article><article><span>종합점수</span><b>{value(analysis?.totalScore)}</b></article><article><span>거래량</span><b>{value(analysis?.volume)}</b></article></div>
-                <PriceLineChart points={mergeRealtimePoints(detail.priceHistory, realtimePoints[stock.ticker])} realtime={Boolean(realtimePrices[stock.ticker])} />
+                <div className="detail-metrics"><article><span>현재가</span><b>${value(realtimePrices[stock.ticker]?.price ?? analysis?.currentPrice)}</b><RealtimeFeedBadge feed={realtimePrices[stock.ticker]?.feed} /></article><article><span>등락률</span><b className={Number(analysis?.changeRate) >= 0 ? 'up' : 'down'}>{analysis && Number(analysis.changeRate) >= 0 ? '+' : ''}{value(analysis?.changeRate, '%')}</b></article><article><span>종합점수</span><b>{value(analysis?.totalScore)}</b></article><article><span>거래량</span><b>{value(analysis?.volume)}</b></article></div>
+                <PriceLineChart points={mergeRealtimePoints(detail.priceHistory, realtimePoints[stock.ticker])} feed={realtimePrices[stock.ticker]?.feed} />
                 <article className="analysis-panel"><span>LATEST LENS ANALYSIS</span><h2>{analysis ? `${formatLensLabel(analysis.label)} · ${formatMarketSession(analysis.marketSession)}` : '최신 분석 없음'}</h2>{analysis ? <><div className="score-breakdown"><b>뉴스 {analysis.newsScore}</b><b>주가 {analysis.movementScore}</b><b>거래량 {analysis.volumeScore}</b><b>위험 {analysis.riskScore}</b></div><p>분석 시각 {formatDate(analysis.analyzedAt)}</p></> : <p>아직 완료된 분석 배치에 포함되지 않은 종목입니다.</p>}</article>
                 <section className="detail-news"><div><span>RELATED NEWS</span><h2>관련 최신 뉴스</h2></div>{news.length === 0 ? <p>저장된 관련 뉴스가 없습니다.</p> : <div className="news-list">{news.map((item) => <article key={item.newsId} onClick={() => item.url && window.open(item.url, '_blank', 'noopener,noreferrer')}><div><span>{item.source}</span><time>{formatDate(item.publishedAt)}</time></div><h2>{item.title}</h2><p>{item.summary}</p><footer><i>원문 보기 ↗</i></footer></article>)}</div>}</section>
             </>}

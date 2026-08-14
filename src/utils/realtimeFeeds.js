@@ -1,0 +1,5 @@
+export const getRealtimeFeedLabel = (feed) => feed === 'OVERNIGHT'
+    ? '오버나이트 참고호가'
+    : feed === 'IEX'
+        ? 'IEX 실시간'
+        : ''

@@ -9,7 +9,7 @@ const normalizeTickers = (tickers) => [...new Set(
 )].slice(0, MAX_IEX_SYMBOLS)
 
 /**
- * 브라우저의 EventSource로 백엔드 IEX SSE 스트림을 구독한다.
+ * 브라우저의 EventSource로 백엔드 IEX/Overnight SSE 스트림을 구독한다.
  * EventSource가 네트워크 단절 시 자동 재연결하므로 오류 때 즉시 닫지 않는다.
  */
 export const subscribeRealtimePrices = (tickers, handlers = {}) => {
