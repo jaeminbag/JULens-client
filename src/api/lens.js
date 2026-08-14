@@ -42,6 +42,10 @@ export const getStockDetail = (ticker) => apiRequest(
     `/stocks/${encodeURIComponent(ticker)}/detail`,
 )
 
-export const getStockPriceHistories = (tickers) => apiRequest(
-    `/stocks/price-history?${buildQuery({ tickers: tickers.join(',') })}`,
+export const getStockPriceHistories = (tickers, period = 'REALTIME') => apiRequest(
+    `/stocks/price-history?${buildQuery({ tickers: tickers.join(','), period })}`,
+)
+
+export const getUsdKrwExchangeRate = () => apiRequest(
+    '/stocks/exchange-rate/usd-krw',
 )

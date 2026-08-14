@@ -38,7 +38,7 @@ export const useRealtimePrices = (tickers) => {
     return { prices, points }
 }
 
-export const mergeRealtimePoints = (history = [], realtimePoints = []) => {
+export const mergeRealtimePoints = (history = [], realtimePoints = [], windowStart = null) => {
     const byTimestamp = new Map()
     ;[...history, ...realtimePoints].forEach((point) => {
         if (point?.timestamp && Number.isFinite(Number(point.price))) {
@@ -46,6 +46,7 @@ export const mergeRealtimePoints = (history = [], realtimePoints = []) => {
         }
     })
     return [...byTimestamp.values()]
+        .filter((point) => !windowStart || new Date(point.timestamp) >= new Date(windowStart))
         .sort((left, right) => new Date(left.timestamp) - new Date(right.timestamp))
         .slice(-MAX_POINTS_PER_TICKER)
 }
