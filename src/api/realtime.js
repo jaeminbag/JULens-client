@@ -1,4 +1,4 @@
-import { buildApiUrl } from './client.js'
+import { apiRequest, buildApiUrl } from './client.js'
 
 const MAX_IEX_SYMBOLS = 30
 
@@ -18,6 +18,8 @@ export const subscribeRealtimePrices = (tickers, handlers = {}) => {
 
     const query = new URLSearchParams()
     symbols.forEach((ticker) => query.append('tickers', ticker))
+    // 일부 배포 프록시가 이전 SSE 응답을 재사용하지 않도록 연결마다 식별자를 둔다.
+    query.set('streamId', `${Date.now()}`)
 
     const eventSource = new EventSource(buildApiUrl(`/stocks/realtime?${query}`))
 
@@ -35,4 +37,14 @@ export const subscribeRealtimePrices = (tickers, handlers = {}) => {
     eventSource.onerror = () => handlers.onError?.()
 
     return () => eventSource.close()
+}
+
+/** SSE가 프록시에서 잠시 끊겨도 서버 메모리의 최신 가격을 보조 조회한다. */
+export const getLatestRealtimePrices = (tickers) => {
+    const symbols = normalizeTickers(tickers)
+    if (symbols.length === 0) return Promise.resolve([])
+
+    const query = new URLSearchParams()
+    symbols.forEach((ticker) => query.append('tickers', ticker))
+    return apiRequest(`/stocks/realtime/latest?${query}`)
 }
