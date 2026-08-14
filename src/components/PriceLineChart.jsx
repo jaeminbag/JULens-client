@@ -12,7 +12,7 @@ const formatChartDate = (timestamp, intraday) => new Intl.DateTimeFormat('ko-KR'
     ? { hour: '2-digit', minute: '2-digit' }
     : { month: 'short', day: 'numeric' }).format(new Date(timestamp))
 
-export default function PriceLineChart({ points = [], compact = false }) {
+export default function PriceLineChart({ points = [], compact = false, realtime = false }) {
     const gradientId = `price-chart-${useId().replace(/:/g, '')}`
     const validPoints = points
         .map((point) => ({ ...point, price: Number(point.price) }))
@@ -50,7 +50,7 @@ export default function PriceLineChart({ points = [], compact = false }) {
     return <section className={`price-chart-panel ${compact ? 'compact' : ''} ${rising ? 'rising' : 'falling'}`}>
         {!compact && <header>
             <div><span>PRICE TREND</span><h2>가격 추이</h2></div>
-            <div className="chart-current-price"><strong>{formatPrice(lastPoint.price)}</strong><b>{changeRate >= 0 ? '+' : ''}{changeRate.toFixed(2)}%</b></div>
+            <div className="chart-current-price"><strong>{formatPrice(lastPoint.price)}</strong><b>{changeRate >= 0 ? '+' : ''}{changeRate.toFixed(2)}%</b>{realtime && <i className="realtime-badge">IEX 실시간</i>}</div>
         </header>}
         <div className="price-chart-canvas">
             <svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} role={compact ? undefined : 'img'} aria-label={compact ? undefined : `${formatPrice(firstPoint.price)}에서 ${formatPrice(lastPoint.price)}까지의 가격 선 그래프`}>
@@ -61,6 +61,6 @@ export default function PriceLineChart({ points = [], compact = false }) {
                 {!compact && <circle cx={coordinates.at(-1).x} cy={coordinates.at(-1).y} r="5" fill={color}/>}
             </svg>
         </div>
-        {!compact && <footer><span>{formatChartDate(firstPoint.timestamp, intraday)}</span><b>{intraday ? '오늘 · 15분 지연' : '최근 거래일'}</b><span>{formatChartDate(lastPoint.timestamp, intraday)}</span></footer>}
+        {!compact && <footer><span>{formatChartDate(firstPoint.timestamp, intraday)}</span><b>{realtime ? '오늘 · IEX 실시간' : intraday ? '오늘 · 15분 지연' : '최근 거래일'}</b><span>{formatChartDate(lastPoint.timestamp, intraday)}</span></footer>}
     </section>
 }

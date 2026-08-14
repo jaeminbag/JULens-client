@@ -7,6 +7,7 @@ import SiteHeader from '../components/SiteHeader.jsx'
 import { hasValidAccessToken } from '../utils/auth.js'
 import { formatLensLabel, formatMarketSession } from '../utils/lensLabels.js'
 import { getStockDisplayNames } from '../utils/stockNames.js'
+import { useRealtimePrices } from '../hooks/useRealtimePrices.js'
 import './TodayLensPage.css'
 
 const value = (number, suffix = '') => number == null
@@ -20,6 +21,7 @@ export default function WatchlistPage() {
     const [loading, setLoading] = useState(loggedIn)
     const [error, setError] = useState('')
     const [reload, setReload] = useState(0)
+    const { prices: realtimePrices } = useRealtimePrices(items.map((item) => item.stock?.ticker))
 
     useEffect(() => {
         if (!loggedIn) return
@@ -55,7 +57,7 @@ export default function WatchlistPage() {
                     const { primaryName } = getStockDisplayNames(stock)
                     return <button key={item.userStockId} onClick={() => navigate(`/stocks/${stock.ticker}`)}>
                         <div><b>{stock.ticker}</b><strong>{primaryName}</strong><span>{analysis ? `${formatLensLabel(analysis.label)} · ${formatMarketSession(analysis.marketSession)}` : '아직 최신 분석이 없습니다.'}</span></div>
-                        <dl><div><dt>현재가</dt><dd>${value(analysis?.currentPrice)}</dd></div><div><dt>등락률</dt><dd className={Number(analysis?.changeRate) >= 0 ? 'up' : 'down'}>{analysis && Number(analysis.changeRate) >= 0 ? '+' : ''}{value(analysis?.changeRate, '%')}</dd></div><div><dt>종합점수</dt><dd>{value(analysis?.totalScore)}</dd></div></dl><i>→</i>
+                        <dl><div><dt>현재가</dt><dd>${value(realtimePrices[stock.ticker]?.price ?? analysis?.currentPrice)}</dd>{realtimePrices[stock.ticker] && <i className="realtime-badge">IEX 실시간</i>}</div><div><dt>등락률</dt><dd className={Number(analysis?.changeRate) >= 0 ? 'up' : 'down'}>{analysis && Number(analysis.changeRate) >= 0 ? '+' : ''}{value(analysis?.changeRate, '%')}</dd></div><div><dt>종합점수</dt><dd>{value(analysis?.totalScore)}</dd></div></dl><i>→</i>
                     </button>
                 })}</div>}
             </>}

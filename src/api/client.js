@@ -1,5 +1,7 @@
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080').replace(/\/$/, '')
 
+export const buildApiUrl = (path) => `${API_BASE_URL}${path}`
+
 export class ApiError extends Error {}
 
 export const apiRequest = async (path, { auth = false, ...options } = {}) => {
@@ -12,7 +14,7 @@ export const apiRequest = async (path, { auth = false, ...options } = {}) => {
 
     let response
     try {
-        response = await fetch(`${API_BASE_URL}${path}`, { ...options, headers })
+        response = await fetch(buildApiUrl(path), { ...options, headers })
     } catch {
         throw new ApiError('서버에 연결할 수 없습니다. 잠시 후 다시 시도해주세요.')
     }
