@@ -6,6 +6,7 @@ import LensTabs from '../components/LensTabs.jsx'
 import Pagination from '../components/Pagination.jsx'
 import SiteHeader from '../components/SiteHeader.jsx'
 import PriceLineChart from '../components/PriceLineChart.jsx'
+import RealtimeFeedBadge from '../components/RealtimeFeedBadge.jsx'
 import { useSiteFeedback } from '../components/SiteFeedback.jsx'
 import { hasValidAccessToken } from '../utils/auth.js'
 import { formatLensLabel, formatMarketSession } from '../utils/lensLabels.js'
@@ -120,8 +121,8 @@ export default function TodayLensPage() {
                 return <article className="stock-card" key={item.analysisId} onClick={() => navigate(`/stocks/${item.ticker}`)}>
                     <div className="stock-card-top"><span>{item.ticker}</span><strong>{number(item.totalScore)}</strong></div>
                     <h2>{primaryName}</h2>{secondaryName && <p>{secondaryName}</p>}
-                    <PriceLineChart points={mergeRealtimePoints(priceHistories[item.ticker], realtimePoints[item.ticker])} compact realtime={Boolean(realtimePrice)} />
-                    <div className="stock-metrics"><span>현재가 <b>{money(realtimePrice?.price ?? item.currentPrice)}</b>{realtimePrice && <i className="realtime-badge">IEX 실시간</i>}</span><span>등락률 <b className={number(item.changeRate) >= 0 ? 'up' : 'down'}>{number(item.changeRate) >= 0 ? '+' : ''}{number(item.changeRate).toFixed(2)}%</b></span><span>거래량 <b>{number(item.volume).toLocaleString()}</b></span></div>
+                    <PriceLineChart points={mergeRealtimePoints(priceHistories[item.ticker], realtimePoints[item.ticker])} compact feed={realtimePrice?.feed} />
+                    <div className="stock-metrics"><span>현재가 <b>{money(realtimePrice?.price ?? item.currentPrice)}</b><RealtimeFeedBadge feed={realtimePrice?.feed} /></span><span>등락률 <b className={number(item.changeRate) >= 0 ? 'up' : 'down'}>{number(item.changeRate) >= 0 ? '+' : ''}{number(item.changeRate).toFixed(2)}%</b></span><span>거래량 <b>{number(item.volume).toLocaleString()}</b></span></div>
                     <small>{item.exchange} · {formatMarketSession(item.marketSession)} · {formatLensLabel(item.label)}</small>
                 </article>
             })}</div>}

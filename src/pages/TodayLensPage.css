@@ -153,6 +153,12 @@
     white-space: nowrap;
 }
 
+.realtime-badge.indicative {
+    border-color: rgb(255 197 92 / 38%);
+    color: #ffc55c;
+    background: rgb(255 197 92 / 9%);
+}
+
 .detail-metrics .realtime-badge,
 .watch-list .realtime-badge {
     display: block;
