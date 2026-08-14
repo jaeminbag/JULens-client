@@ -135,11 +135,14 @@ export default function TodayLensPage() {
                 const { primaryName, secondaryName } = getStockDisplayNames(item)
                 const realtimePrice = realtimePrices[item.ticker]
                 const history = priceHistories[item.ticker]
+                const displayPrice = realtimePrice?.price
+                    ?? history?.points?.at(-1)?.price
+                    ?? item.currentPrice
                 return <article className="stock-card" key={item.analysisId} onClick={() => navigate(`/stocks/${item.ticker}`)}>
                     <div className="stock-card-top"><span>{item.ticker}</span><strong>{number(item.totalScore)}</strong></div>
                     <h2>{primaryName}</h2>{secondaryName && <p>{secondaryName}</p>}
                     <PriceLineChart points={mergeRealtimePoints(history?.points, realtimePoints[item.ticker], history?.windowStart)} compact feed={realtimePrice?.feed} />
-                    <div className="stock-metrics"><span>현재가 <DualPrice value={realtimePrice?.price ?? item.currentPrice} exchangeRate={exchangeRate} /><RealtimeFeedBadge feed={realtimePrice?.feed} /></span><span>등락률 <b className={number(item.changeRate) >= 0 ? 'up' : 'down'}>{number(item.changeRate) >= 0 ? '+' : ''}{number(item.changeRate).toFixed(2)}%</b></span><span>거래량 <b>{number(item.volume).toLocaleString()}</b></span></div>
+                    <div className="stock-metrics"><span>현재가 <DualPrice value={displayPrice} exchangeRate={exchangeRate} /><RealtimeFeedBadge feed={realtimePrice?.feed} /></span><span>등락률 <b className={number(item.changeRate) >= 0 ? 'up' : 'down'}>{number(item.changeRate) >= 0 ? '+' : ''}{number(item.changeRate).toFixed(2)}%</b></span><span>거래량 <b>{number(item.volume).toLocaleString()}</b></span></div>
                     <small>{item.exchange} · {formatMarketSession(item.marketSession)} · {formatLensLabel(item.label)}</small>
                 </article>
             })}</div>}

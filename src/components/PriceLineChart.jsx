@@ -45,6 +45,7 @@ export default function PriceLineChart({
     windowStart = null,
     windowEnd = null,
     loading = false,
+    currentPrice = null,
 }) {
     const gradientId = `price-chart-${useId().replace(/:/g, '')}`
     const validPoints = points
@@ -57,7 +58,7 @@ export default function PriceLineChart({
         if (compact) return <div className="mini-chart-empty">가격 이력 준비 중</div>
         return <section className="price-chart-panel empty">
             <ChartHeader
-                lastPrice={lastPoint?.price}
+                lastPrice={period === 'REALTIME' ? currentPrice ?? lastPoint?.price : lastPoint?.price}
                 changeRate={0}
                 feed={feed}
                 exchangeRate={exchangeRate}
@@ -91,7 +92,7 @@ export default function PriceLineChart({
     return <section className={`price-chart-panel ${compact ? 'compact' : ''} ${rising ? 'rising' : 'falling'}`}>
         {!compact && <>
             <ChartHeader
-                lastPrice={lastPoint.price}
+                lastPrice={period === 'REALTIME' ? currentPrice ?? lastPoint.price : lastPoint.price}
                 changeRate={changeRate}
                 feed={feed}
                 exchangeRate={exchangeRate}
