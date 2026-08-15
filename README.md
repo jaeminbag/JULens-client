@@ -7,7 +7,7 @@ JULens는 프리마켓부터 정규장과 Overnight까지 미국 주식 데이�
 
 - Frontend: [jaeminbag/JULens-client](https://github.com/jaeminbag/JULens-client)
 - Backend: [jaeminbag/JULens-server](https://github.com/jaeminbag/JULens-server)
-- Demo: 배포 후 추가 예정
+- Live Demo: [https://ju-lens-client.vercel.app](https://ju-lens-client.vercel.app)
 
 ![JULens 메인 화면](docs/images/overview.webp)
 
@@ -69,18 +69,16 @@ JULens는 흩어진 시장 정보를 한 화면에서 확인하고, 시가총액
 | Database | Spring Data JPA, MySQL, HikariCP | 회원·게시글·관심 종목·주식 분석 데이터 관리 |
 | Market Data | Alpaca IEX WebSocket, Alpaca Market Data API | 실시간 가격, Overnight 호가, 가격 이력 수집 |
 | API Docs | Springdoc OpenAPI | API 명세 확인 |
+| Deployment | Vercel, Railway | 프론트엔드·백엔드·MySQL 운영 환경 배포 |
 
 ## 시스템 구조
 
 ```mermaid
 flowchart TD
-    Market["Alpaca Market Data"] --> Feed["IEX · Overnight Feed"]
-    News["News Data"] --> Server["Spring Boot Server"]
-    Feed --> Server
-    Rate["USD/KRW Exchange Rate"] --> Server
-    Server <--> DB["MySQL"]
+    Sources["Alpaca · News · Exchange Rate"] --> Server["Spring Boot · Railway"]
+    Server <--> DB["MySQL · Railway"]
     Server --> API["REST API · SSE"]
-    API --> Client["React Client"]
+    API --> Client["React · Vercel"]
 ```
 
 ### 실시간 가격 흐름
@@ -153,15 +151,30 @@ SSE 실시간 가격 → 가격 이력의 마지막 지점 → 기존 분석 가
 
 **해결**
 
-- 클래스 표기와 주요 회사명에 대한 보정 규칙 추가
-- `DATA`, `CLASS`, `CL` 및 잘못된 클래스 음역이 포함된 기존 이름 재생성
-- 영문 원본 회사명을 함께 표시해 자동 변환의 한계 보완
+- 운영 DB의 활성 종목 4,973개를 읽어 공개 종목명 카탈로그와 티커 기준으로 대조
+- 4,971개를 자동 매칭하고 미매칭 2개는 직접 검증해 보완
+- 검증된 한글명 카탈로그를 정적 리소스로 관리해 외부 번역 API 의존 제거
+- `SURG → 서지페이스`처럼 서비스 기준과 다른 표기는 정확한 예외 매핑을 우선 적용
+- AMD, ADT, AT&T처럼 약칭 자체가 공식 명칭인 경우에는 억지 음역 없이 원문 유지
+- 시작 시 종목 동기화 과정에서 기존 DB의 잘못된 이름도 함께 갱신
+
+운영 환경에서 전체 4,973개 종목을 다시 조회해 빈 회사명이 없고, 의도한 예외를 제외한 종목명이 기준 카탈로그와 일치하는지 검증했습니다.
 
 ## 데이터 범위와 한계
 
 JULens의 실시간 가격은 무료 Alpaca IEX 데이터를 사용합니다. IEX 데이터는 미국 전체 거래소의 모든 체결을 포함하지 않기 때문에 종목과 시간대에 따라 가격 변화가 적을 수 있습니다.
 
 Overnight 가격은 실시간 체결가가 아니라 참고 호가의 중간값입니다. JULens는 이러한 데이터 특성을 화면에 구분해 표시하며, 실제 데이터가 없는 구간에 임의 가격을 생성하지 않습니다.
+
+## 배포
+
+| 구성 요소 | 플랫폼 | 주소 |
+| --- | --- | --- |
+| Frontend | Vercel | [JULens 서비스](https://ju-lens-client.vercel.app) |
+| Backend | Railway | [JULens API](https://julens-server-production.up.railway.app) |
+| Database | Railway MySQL | 외부에 직접 노출하지 않고 백엔드에서만 접근 |
+
+프론트엔드는 `VITE_API_BASE_URL`을 통해 운영 백엔드를 참조하며, API Key와 데이터베이스 인증 정보는 각 배포 환경의 환경변수로 관리합니다.
 
 ## 로컬 실행
 
@@ -193,11 +206,10 @@ npm run build
 ./gradlew bootRun
 ```
 
-세부 환경변수와 실행 프로필은 [백엔드 저장소](https://github.com/jaeminbag/JULens-server)에 정리할 예정입니다.
+세부 서버 코드와 실행 설정은 [백엔드 저장소](https://github.com/jaeminbag/JULens-server)에서 확인할 수 있습니다.
 
 ## 향후 개선 계획
 
-- 실제 서비스 배포 및 테스트 계정 제공
 - 외부 API 장애 상황에 대한 사용자 오류 메시지 개선
 - 분석 및 실시간 가격 처리 로직의 자동 테스트 확대
 - 모바일·태블릿 반응형 레이아웃 개선
