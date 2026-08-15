@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
+import { buildApiUrl } from './api/client.js'
 import { useSiteFeedback } from './components/SiteFeedback.jsx'
 import SiteHeader from './components/SiteHeader.jsx'
 import './App.css'
@@ -151,8 +152,8 @@ function App() {
       // 최신글 탭에서는 토글값에 따라 최신순 또는 전체 좋아요순으로 조회한다.
       const requestUrl =
           activeTab === 'popular'
-              ? 'http://localhost:8080/posts/popular'
-              : `http://localhost:8080/posts?order=${latestSort}`
+              ? buildApiUrl('/posts/popular')
+              : buildApiUrl(`/posts?order=${latestSort}`)
 
       try {
         setIsPostsLoading(true)
@@ -260,7 +261,7 @@ function App() {
     setIsLoggingIn(true)
 
     try {
-      const response = await fetch('http://localhost:8080/auth/login', {
+      const response = await fetch(buildApiUrl('/auth/login'), {
         method: 'POST',
         headers: {
           // 요청 본문이 JSON 형식이라는 것을 백엔드에 알려준다.
@@ -349,7 +350,7 @@ function App() {
     setIsSigningUp(true)
 
     try {
-      const response = await fetch('http://localhost:8080/auth/signup', {
+      const response = await fetch(buildApiUrl('/auth/signup'), {
         method: 'POST',
         headers: {
           // 요청 본문이 JSON 형식임을 백엔드에 알려준다.

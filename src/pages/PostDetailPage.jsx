@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { buildApiUrl } from '../api/client.js'
 import { useSiteFeedback } from '../components/SiteFeedback.jsx'
 import { getLoggedInUserId } from '../utils/auth.js'
 import './PostDetailPage.css'
@@ -89,7 +90,7 @@ function PostDetailPage() {
 
                 // 주소의 postId를 이용해 해당 게시글 한 건만 요청한다.
                 const response = await fetch(
-                    `http://localhost:8080/posts/${postId}`,
+                    buildApiUrl(`/posts/${postId}`),
                     {
                         method: 'GET',
                         headers: {
@@ -147,7 +148,7 @@ function PostDetailPage() {
 
                 // 현재 게시글에 작성된 댓글을 오래된 순서대로 조회한다.
                 const response = await fetch(
-                    `http://localhost:8080/posts/${postId}/comments`,
+                    buildApiUrl(`/posts/${postId}/comments`),
                     {
                         method: 'GET',
                         headers: {
@@ -210,7 +211,7 @@ function PostDetailPage() {
             setLikeError('')
 
             const response = await fetch(
-                `http://localhost:8080/posts/${postId}/likes`,
+                buildApiUrl(`/posts/${postId}/likes`),
                 {
                     // 좋아요가 없으면 추가하고, 이미 있으면 취소한다.
                     method: nextLiked ? 'POST' : 'DELETE',
@@ -293,7 +294,7 @@ function PostDetailPage() {
             setCommentError('')
 
             const response = await fetch(
-                `http://localhost:8080/posts/${postId}/comments`,
+                buildApiUrl(`/posts/${postId}/comments`),
                 {
                     method: 'POST',
                     headers: {
@@ -417,7 +418,7 @@ function PostDetailPage() {
             })
 
             const response = await fetch(
-                `http://localhost:8080/comments/${commentId}`,
+                buildApiUrl(`/comments/${commentId}`),
                 {
                     method: 'PUT',
                     headers: {
@@ -519,7 +520,7 @@ function PostDetailPage() {
             })
 
             const response = await fetch(
-                `http://localhost:8080/comments/${commentId}`,
+                buildApiUrl(`/comments/${commentId}`),
                 {
                     method: 'DELETE',
                     headers: {
@@ -597,7 +598,7 @@ function PostDetailPage() {
             setDeleteError('')
 
             const response = await fetch(
-                `http://localhost:8080/posts/${postId}`,
+                buildApiUrl(`/posts/${postId}`),
                 {
                     method: 'DELETE',
                     headers: {

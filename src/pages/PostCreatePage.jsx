@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { buildApiUrl } from '../api/client.js'
 import { useSiteFeedback } from '../components/SiteFeedback.jsx'
 import { getLoggedInUserId } from '../utils/auth.js'
 import './PostCreatePage.css'
@@ -51,7 +52,7 @@ function PostCreatePage({ mode = 'create' }) {
                 setLoadError('')
 
                 const response = await fetch(
-                    `http://localhost:8080/posts/${postId}`,
+                    buildApiUrl(`/posts/${postId}`),
                     {
                         method: 'GET',
                         headers: {
@@ -165,8 +166,8 @@ function PostCreatePage({ mode = 'create' }) {
 
         // 수정 여부에 따라 API 주소와 HTTP 메서드를 결정한다.
         const requestUrl = isEditMode
-            ? `http://localhost:8080/posts/${postId}`
-            : 'http://localhost:8080/posts'
+            ? buildApiUrl(`/posts/${postId}`)
+            : buildApiUrl('/posts')
 
         const requestMethod = isEditMode ? 'PUT' : 'POST'
 
